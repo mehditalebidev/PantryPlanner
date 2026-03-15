@@ -26,11 +26,15 @@ Implemented now:
 - `POST /api/v1/grocery-lists/generate`
 - `GET /api/v1/grocery-lists/{id}`
 - `PUT /api/v1/grocery-lists/{id}/items/{itemId}`
+- `POST /api/v1/recipe-imports`
+- `GET /api/v1/recipe-imports/{id}`
+- `POST /api/v1/recipes/{recipeId}/media`
+- `GET /api/v1/media/{**storageKey}`
+- `DELETE /api/v1/recipes/{recipeId}/media/{mediaId}`
 
 Planned next:
 
-- recipe-import endpoints
-- recipe media support endpoints if needed
+- no additional backend product slices are currently planned
 
 ## Auth
 
@@ -61,6 +65,7 @@ Implemented behavior:
 - steps can link to recipe ingredients through structured references
 - source URLs are optional because recipes can be manual or imported
 - deleting a recipe is blocked while any meal plan still schedules it
+- deleting a recipe also cleans up uploaded media files tied to that recipe
 
 ## Ingredient Endpoints
 
@@ -117,3 +122,28 @@ Implemented behavior:
 - normalized ingredients aggregate into deterministic base unit codes
 - non-normalized ingredients only aggregate when their authored unit code still matches exactly
 - item checkoff state is mutable after generation
+
+## Recipe-Import Endpoints
+
+- `POST /api/v1/recipe-imports`
+- `GET /api/v1/recipe-imports/{id}`
+
+Implemented behavior:
+
+- recipe imports are user-scoped review artifacts
+- the current foundation accepts a source URL and produces a draft that the frontend can hand off to the normal recipe editor
+- import drafts reuse recipe field names and nested recipe document structure instead of introducing a second permanent recipe shape
+- foundation imports intentionally require review before saving as a real recipe
+
+## Media Endpoints
+
+- `POST /api/v1/recipes/{recipeId}/media`
+- `GET /api/v1/media/{**storageKey}`
+- `DELETE /api/v1/recipes/{recipeId}/media/{mediaId}`
+
+Implemented behavior:
+
+- uploads are multipart form requests tied to an existing user-owned recipe
+- media metadata stays in the recipe model, while file storage and protected content delivery live behind dedicated media endpoints
+- uploaded content is served through an authenticated backend route instead of a public static-files path
+- uploaded files are cleaned up when removed from the recipe or when the recipe itself is deleted

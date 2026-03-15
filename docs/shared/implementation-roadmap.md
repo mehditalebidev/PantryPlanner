@@ -27,7 +27,6 @@
 
 ## After MVP Stability
 
-- pantry item tracking
 - richer import parsing and editing workflows
 - media upload lifecycle improvements
 - planning templates and reuse

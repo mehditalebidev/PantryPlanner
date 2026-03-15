@@ -2,9 +2,9 @@
 
 ## Current Handoff State
 
-- backend auth, ingredient CRUD, recipe CRUD, meal-plan CRUD, grocery generation/checkoff, and unit lookup endpoints are implemented
+- backend auth, ingredient CRUD, recipe CRUD, meal-plan CRUD, grocery generation/checkoff, recipe-import foundation, and unit lookup endpoints are implemented
 - frontend scaffolding is not yet initialized
-- import and media upload flows are still planned
+- media upload flows are still planned
 - `backend/docs/frontend-integration-guide.md` is the backend-to-frontend implementation guide for current entities and endpoint relationships
 
 ## First Frontend Goals
@@ -29,6 +29,7 @@
 - recipe steps reference recipe ingredients through structured `ingredientReferences`
 - meal plans own flexible slots and dated entries
 - grocery lists are generated snapshots and should be treated as derived state
+- recipe imports produce reviewable recipe drafts that should feed the normal recipe form instead of a separate save model
 - keep mock data realistic for quantities, units, servings, and planning windows
 
 ## Done Criteria For Initial Frontend Slice

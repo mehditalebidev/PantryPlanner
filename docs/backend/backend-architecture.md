@@ -40,6 +40,19 @@ PantryPlanner.Api/
       Persistence/
       Shared/
       UpdateMealPlan/
+    Media/
+      DeleteRecipeMedia/
+      Endpoints/
+      GetMediaContent/
+      Shared/
+      UploadRecipeMedia/
+    RecipeImports/
+      CreateRecipeImport/
+      Domain/
+      Endpoints/
+      GetRecipeImport/
+      Persistence/
+      Shared/
     Recipes/
       CreateRecipe/
       DeleteRecipe/
@@ -84,13 +97,12 @@ PantryPlanner.Api/
 - keep user ownership explicit in every query and mutation
 - keep backend-owned unit normalization in the dedicated `Units` slice so recipe persistence, future planner aggregation, and future grocery generation all share one source of truth
 - keep seeded ingredient catalog behavior inside the `Ingredients` slice rather than inside auth or recipes
+- keep recipe-import drafts mapped to recipe field names so import review can flow into standard recipe creation instead of a separate save path
+- keep binary media storage and protected content delivery inside a dedicated `Media` slice while recipe metadata remains part of the `Recipes` aggregate
 
 ## Planned Slices
 
-Remaining near-term slices should follow the same structure:
-
-- `RecipeImports`
-- `Media` if it becomes large enough to justify its own slice
+No additional near-term backend slices are planned beyond the current PantryPlanner MVP set.
 
 ## Testing Layout
 

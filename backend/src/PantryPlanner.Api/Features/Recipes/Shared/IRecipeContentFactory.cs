@@ -6,6 +6,7 @@ public interface IRecipeContentFactory
 {
     Task<Result<RecipeContentDraft>> BuildAsync(
         Guid userId,
+        Guid? recipeId,
         IReadOnlyCollection<RecipeIngredientWriteModel> ingredientRequests,
         IReadOnlyCollection<RecipeStepWriteModel> stepRequests,
         IReadOnlyCollection<RecipeMediaAssetWriteModel> mediaRequests,

@@ -6,7 +6,7 @@ This directory contains the PantryPlanner backend scaffold.
 
 - The backend centers on a single ASP.NET Core API project with a vertical-slice layout.
 - Local email/password auth is implemented with signup, login, and `users/me` endpoints.
-- Recipe CRUD, ingredient CRUD, meal-plan CRUD, grocery generation/checkoff, seeded starter ingredients, and unit lookup/normalization are implemented.
+- Recipe CRUD, ingredient CRUD, meal-plan CRUD, grocery generation/checkoff, recipe-import foundation, seeded starter ingredients, and unit lookup/normalization are implemented.
 - PostgreSQL, EF Core migrations, JWT auth, ProblemDetails responses, seeded user ingredient catalogs, and test coverage are wired up.
 - Import and media upload slices are still planned.
 - `docs/` holds backend-specific implementation notes and agent-readable guidance.
@@ -25,6 +25,7 @@ backend/
         GroceryLists/
         Ingredients/
         MealPlans/
+        RecipeImports/
         Recipes/
         Units/
         Users/

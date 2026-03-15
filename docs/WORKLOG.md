@@ -4,6 +4,10 @@ Record meaningful project changes here in reverse chronological order.
 
 ## Entries
 
+- 2026-03-15 | MEDIA-001 | in_progress | local build | Started backend recipe-media flow work for storage-backed uploads, protected content access, and cleanup behavior.
+- 2026-03-15 | MEDIA-001 | in_progress | local build | Implemented the backend recipe-media upload/content/delete flow, added migrations/tests, and verified the full backend test suite passes.
+- 2026-03-15 | IMP-001 | in_progress | local build | Started backend recipe-import foundation work for URL-based draft generation, persisted review state, and frontend-ready import contract docs.
+- 2026-03-15 | IMP-001 | in_progress | local build | Implemented the backend recipe-import foundation with persisted URL-based review drafts, added migration/tests, and verified the backend test suite passes.
 - 2026-03-15 | GROC-001 | in_progress | local build | Implemented backend grocery-list generation and item checkoff, added migrations, and verified backend tests pass.
 - 2026-03-15 | PLAN-001 | in_progress | local build | Implemented backend meal-plan CRUD with nested slot references, recipe scheduling, and verified backend tests pass.
 - 2026-03-15 | PLAN-001 | in_progress | local build | Started backend meal-plan slice work, including nested slot references, scheduling rules, and grocery-generation contract updates.

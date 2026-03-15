@@ -43,5 +43,6 @@ public sealed record RecipeMediaAssetResponse(
     string Kind,
     string? StorageKey,
     string Url,
+    string? ContentType,
     string? Caption,
     int SortOrder);

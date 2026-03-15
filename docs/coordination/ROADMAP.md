@@ -32,6 +32,5 @@ Goal: turn meal plans into actionable shopping lists.
 
 - `IMP-001` recipe import foundation
 - `MEDIA-001` richer media handling
-- `PANTRY-001` pantry item tracking if still needed
 
 Goal: round out PantryPlanner without overloading the MVP.

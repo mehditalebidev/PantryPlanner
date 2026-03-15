@@ -22,6 +22,15 @@ public static class RecipeErrors
             StatusCodes.Status400BadRequest);
     }
 
+    public static Error InvalidMediaReference()
+    {
+        return new Error(
+            "invalid_media_reference",
+            "One or more media assets are invalid.",
+            "The request referenced a media asset that does not exist for the current user.",
+            StatusCodes.Status400BadRequest);
+    }
+
     public static Error InUseByMealPlan()
     {
         return new Error(

@@ -9,6 +9,7 @@ This guide explains the backend entities, endpoint relationships, and the API us
 - recipes: full CRUD with ordered ingredients, ordered steps, media metadata, and structured step-to-ingredient references
 - meal plans: full CRUD with flexible slots and dated recipe scheduling
 - grocery lists: generation from meal plans plus item checkoff updates
+- recipe imports: URL-based starter draft generation plus persisted review lookup
 - units: lookup endpoint plus backend-owned normalization rules used by recipes
 
 ## Core Entities And Relationships
@@ -90,6 +91,12 @@ This guide explains the backend entities, endpoint relationships, and the API us
 - fields: `id`, optional `ingredientId`, `name`, `quantity`, `unitCode`, `isChecked`, `sourceCount`
 - quantity uses normalized units when safe aggregation is possible; otherwise it stays in the authored unit code
 
+### RecipeImport
+
+- user-scoped review artifact for imported recipe data
+- fields: `id`, `sourceType`, `sourceUrl`, `status`, `draft`, `warnings`, timestamps
+- `draft` uses recipe field names so the frontend can open the normal recipe form prefilled from the import result
+
 ## Why Normalization Stays In The Backend
 
 - recipes persist normalized values that later planner and grocery features will aggregate on the server
@@ -166,6 +173,18 @@ Behavior:
 - non-normalized ingredients only aggregate when `ingredientId` and authored `unitCode` still match exactly
 - grocery lists are stored snapshots and item checkoff state is mutable after generation
 
+### Recipe Imports
+
+- `POST /api/v1/recipe-imports`
+- `GET /api/v1/recipe-imports/{id}`
+
+Behavior:
+
+- create an import by providing a source URL
+- the backend stores a reviewable import result instead of creating a recipe immediately
+- the returned `draft` should be treated as recipe-form starter data and submitted later through `POST /api/v1/recipes`
+- current foundation behavior infers only starter values from the URL and returns warnings that the user should review the draft
+
 ### Units
 
 - `GET /api/v1/units`
@@ -204,6 +223,13 @@ Use this to build unit pickers and display unit metadata. Do not hardcode the su
 - treat the generated grocery list as a snapshot and update item state through `PUT /grocery-lists/{id}/items/{itemId}`
 - do not recalculate grocery aggregation in the client
 
+### Recipe Import Screens
+
+- submit a source URL through `POST /recipe-imports`
+- route the returned `draft` directly into the normal recipe create/edit form state
+- surface `warnings` clearly because the current foundation intentionally returns partial drafts that require user review
+- use `GET /recipe-imports/{id}` to reopen a saved review flow
+
 ### Recipe Detail Screens
 
 - render ordered `ingredients`, `steps`, and `media`
@@ -214,6 +240,7 @@ Use this to build unit pickers and display unit metadata. Do not hardcode the su
 - `401 unauthorized`: token missing or expired
 - `404 ingredient_not_found` or `404 recipe_not_found`: stale route or deleted resource
 - `404 meal_plan_not_found` or `404 grocery_list_not_found`: stale route or cross-user access
+- `404 recipe_import_not_found`: stale route or cross-user access
 - `409 ingredient_name_in_use`: duplicate ingredient rename/create
 - `409 ingredient_in_use_by_recipe`: attempted delete while referenced by at least one recipe
 - `409 recipe_in_use_by_meal_plan`: attempted recipe delete while still scheduled

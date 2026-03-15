@@ -14,8 +14,8 @@ These docs define the cross-workspace source of truth for PantryPlanner.
 
 ## Current Focus
 
-- auth, ingredients, recipes, meal plans, grocery generation/checkoff, and unit lookup are implemented in the backend
-- import and media upload features are still planned
+- auth, ingredients, recipes, meal plans, grocery generation/checkoff, recipe-import foundation, and unit lookup are implemented in the backend
+- media upload features are still planned
 - frontend scaffolding is still pending
 - docs should stay ahead of implementation while the pivot is still fresh
 

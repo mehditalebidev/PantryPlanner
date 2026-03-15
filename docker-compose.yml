@@ -35,8 +35,12 @@ services:
       Jwt__Audience: ${JWT__AUDIENCE:-PantryPlanner.Client}
       Jwt__SigningKey: ${JWT__SIGNINGKEY:-development-signing-key-with-32-characters-minimum}
       Jwt__AccessTokenMinutes: ${JWT__ACCESSTOKENMINUTES:-60}
+      Media__StorageRoot: ${MEDIA__STORAGEROOT:-/app/media}
     ports:
       - "${API_PORT:-8080}:8080"
+    volumes:
+      - pantryplanner-media-data:${MEDIA__STORAGEROOT:-/app/media}
 
 volumes:
   pantryplanner-postgres-data:
+  pantryplanner-media-data:

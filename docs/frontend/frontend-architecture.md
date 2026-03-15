@@ -26,7 +26,6 @@
 - `meal-plans`
 - `grocery-lists`
 - `recipe-imports`
-- `pantry`
 
 ## State Rules
 

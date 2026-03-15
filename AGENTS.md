@@ -10,8 +10,8 @@
 - The repo is docs-first.
 - `backend/` contains a runnable ASP.NET Core API with local auth, JWT issuance, PostgreSQL wiring, migrations, and tests.
 - `frontend/` is still a placeholder and has no real scaffold or `package.json` yet.
-- The backend currently implements auth, ingredient CRUD, recipe CRUD, meal-plan CRUD, grocery-list generation/checkoff, unit lookup/normalization, PostgreSQL migrations, and tests.
-- Recipe import and media upload flows are still planned.
+- The backend currently implements auth, ingredient CRUD, recipe CRUD, meal-plan CRUD, grocery-list generation/checkoff, recipe-import foundation, unit lookup/normalization, PostgreSQL migrations, and tests.
+- Recipe media upload flows are still planned.
 
 ## Extra Instruction Files
 - Checked and not found: `.cursorrules`, `.cursor/rules/`, `.github/copilot-instructions.md`.
@@ -115,7 +115,7 @@
 ## Naming Conventions
 - Prefer descriptive domain names over abbreviations.
 - Name by business meaning, not UI position.
-- Use PantryPlanner language: recipe, ingredient, unit, meal plan, meal slot, grocery list, pantry item, import source, media asset.
+- Use PantryPlanner language: recipe, ingredient, unit, meal plan, meal slot, grocery list, import source, media asset.
 - React components use PascalCase; hooks use `useX`; TypeScript variables and functions use camelCase; TypeScript types and interfaces use PascalCase.
 - C# types, methods, and properties use PascalCase; locals and parameters use camelCase.
 - Tests should use `Method_ExpectedBehavior_WhenCondition`.

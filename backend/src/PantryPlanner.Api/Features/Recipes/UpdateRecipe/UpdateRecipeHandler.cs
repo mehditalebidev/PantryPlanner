@@ -2,18 +2,21 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PantryPlanner.Api.Common.Persistence;
 using PantryPlanner.Api.Common.Results;
+using PantryPlanner.Api.Features.Media;
 
 namespace PantryPlanner.Api.Features.Recipes;
 
 public sealed class UpdateRecipeHandler : IRequestHandler<UpdateRecipeCommand, Result<RecipeResponse>>
 {
+    private readonly IMediaStorage _mediaStorage;
     private readonly IRecipeContentFactory _recipeContentFactory;
     private readonly IRepository _repository;
 
-    public UpdateRecipeHandler(IRepository repository, IRecipeContentFactory recipeContentFactory)
+    public UpdateRecipeHandler(IRepository repository, IRecipeContentFactory recipeContentFactory, IMediaStorage mediaStorage)
     {
         _repository = repository;
         _recipeContentFactory = recipeContentFactory;
+        _mediaStorage = mediaStorage;
     }
 
     public async Task<Result<RecipeResponse>> Handle(UpdateRecipeCommand request, CancellationToken cancellationToken)
@@ -28,6 +31,7 @@ public sealed class UpdateRecipeHandler : IRequestHandler<UpdateRecipeCommand, R
 
         var contentResult = await _recipeContentFactory.BuildAsync(
             request.UserId,
+            request.RecipeId,
             request.Ingredients,
             request.Steps,
             request.Media,
@@ -45,6 +49,20 @@ public sealed class UpdateRecipeHandler : IRequestHandler<UpdateRecipeCommand, R
             request.PrepTimeMinutes,
             request.CookTimeMinutes,
             request.SourceUrl);
+
+        var existingMediaStorageKeys = await _repository.DbContext.RecipeMediaAssets
+            .Where(mediaAsset => mediaAsset.RecipeId == request.RecipeId && mediaAsset.StorageKey != null)
+            .Select(mediaAsset => mediaAsset.StorageKey!)
+            .ToArrayAsync(cancellationToken);
+
+        var retainedMediaStorageKeys = request.Media
+            .Where(mediaAsset => !string.IsNullOrWhiteSpace(mediaAsset.StorageKey))
+            .Select(mediaAsset => mediaAsset.StorageKey!.Trim())
+            .ToHashSet(StringComparer.Ordinal);
+
+        var removedMediaStorageKeys = existingMediaStorageKeys
+            .Where(storageKey => !retainedMediaStorageKeys.Contains(storageKey))
+            .ToArray();
 
         var existingStepIds = await _repository.DbContext.RecipeSteps
             .Where(step => step.RecipeId == request.RecipeId)
@@ -95,6 +113,11 @@ public sealed class UpdateRecipeHandler : IRequestHandler<UpdateRecipeCommand, R
         }
 
         await _repository.SaveChangesAsync(cancellationToken);
+
+        foreach (var storageKey in removedMediaStorageKeys)
+        {
+            await _mediaStorage.DeleteIfExistsAsync(storageKey, cancellationToken);
+        }
 
         return Result<RecipeResponse>.Success(recipe.ToResponse());
     }

@@ -13,8 +13,8 @@ This document defines the backend contract the frontend can build against.
 
 ## Implementation Status
 
-- implemented now: `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`, `GET /api/v1/users/me`, ingredient CRUD, recipe CRUD, meal-plan CRUD, grocery-list generation/checkoff, and `GET /api/v1/units`
-- planned next: import workflows and recipe media upload support
+- implemented now: `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`, `GET /api/v1/users/me`, ingredient CRUD, recipe CRUD, recipe media upload/content/delete, meal-plan CRUD, grocery-list generation/checkoff, recipe-import foundation, and `GET /api/v1/units`
+- planned next: no additional API slices are currently planned
 - frontend code may mock planned endpoints from this document, but should not assume backend availability until the corresponding coordination item lands
 
 ## Error Shape
@@ -158,7 +158,8 @@ Recipe creation and updates should support ingredient reuse, structured step ref
     {
       "kind": "image",
       "storageKey": "recipes/sheet-pan.jpg",
-      "url": "https://cdn.example.com/recipes/sheet-pan.jpg",
+      "url": "/api/v1/media/recipes/user-id/recipe-id/sheet-pan.jpg",
+      "contentType": "image/jpeg",
       "caption": "Finished dish",
       "sortOrder": 1
     }
@@ -210,7 +211,9 @@ Recipe creation and updates should support ingredient reuse, structured step ref
     {
       "id": "uuid",
       "kind": "image",
+      "storageKey": "recipes/user-id/recipe-id/sheet-pan.jpg",
       "url": "https://cdn.example.com/recipes/sheet-pan.jpg",
+      "contentType": "image/jpeg",
       "caption": "Finished dish",
       "sortOrder": 1
     }
@@ -243,6 +246,50 @@ Implemented behavior:
 - normalized quantities are returned when the selected unit can be converted safely into that family base unit
 - custom or non-convertible units are preserved as authored without guessed normalization
 - ingredient deletion returns `409` when the ingredient is still referenced by at least one recipe
+- uploaded media URLs may be backend-managed relative paths, while manually linked remote media may still use absolute URLs
+
+## Implemented Recipe Media Contract
+
+### `POST /api/v1/recipes/{recipeId}/media`
+
+Accepts `multipart/form-data`.
+
+Fields:
+
+- `kind`: `image` or `video`
+- `caption`: optional text
+- `sortOrder`: positive integer
+- `file`: binary upload
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "kind": "image",
+  "storageKey": "recipes/user-id/recipe-id/uuid.jpg",
+  "url": "/api/v1/media/recipes/user-id/recipe-id/uuid.jpg",
+  "contentType": "image/jpeg",
+  "caption": "Finished dish",
+  "sortOrder": 1
+}
+```
+
+### `GET /api/v1/media/{**storageKey}`
+
+Returns the uploaded file content for the current user when the storage key belongs to one of that user's recipe media assets.
+
+### `DELETE /api/v1/recipes/{recipeId}/media/{mediaId}`
+
+Deletes the media asset metadata and the stored uploaded file.
+
+Implemented behavior:
+
+- uploads are user-scoped through the owning recipe
+- the upload endpoint persists a recipe media asset immediately so the returned metadata can be reused in later recipe updates
+- uploaded media responses include `storageKey`, `url`, and `contentType`
+- content access stays authenticated and ownership-bound rather than using a public static-files path
+- removing uploaded media through recipe updates or recipe deletion cleans up stored files
 
 ## Implemented Meal Plans Contract
 
@@ -390,12 +437,54 @@ Implemented behavior:
 - generated grocery lists are snapshots that can track item checkoff state after generation
 - recipe deletion returns `409` when the recipe is still scheduled in at least one meal plan
 
-## Planned Import Contract
+## Implemented Import Contract
 
-Planned endpoints:
+### Create Recipe Import Request
+
+```json
+{
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken"
+}
+```
+
+### Recipe Import Shape
+
+```json
+{
+  "id": "uuid",
+  "sourceType": "url",
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+  "status": "needs_review",
+  "draft": {
+    "title": "Sheet Pan Chicken",
+    "description": null,
+    "servings": null,
+    "prepTimeMinutes": null,
+    "cookTimeMinutes": null,
+    "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+    "ingredients": [],
+    "steps": [],
+    "media": []
+  },
+  "warnings": [
+    "This import foundation only infers a starter draft from the source URL. Review and complete the recipe before saving it."
+  ],
+  "createdAt": "2026-03-15T18:00:00Z",
+  "updatedAt": "2026-03-15T18:00:00Z"
+}
+```
+
+Implemented endpoints:
 
 - `POST /api/v1/recipe-imports`
 - `GET /api/v1/recipe-imports/{id}`
+
+Implemented behavior:
+
+- recipe imports are user-scoped
+- the current foundation accepts a source URL and creates a reviewable draft instead of creating a recipe immediately
+- the returned draft uses recipe field names so the frontend can hydrate the normal recipe create/edit flow
+- the foundation infers only starter values and may leave recipe fields incomplete for review
 
 ## Frontend Integration Notes
 

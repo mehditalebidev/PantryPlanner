@@ -12,6 +12,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         .Build();
 
     private readonly IntegrationTestDataSeeder _dataSeeder = new();
+    private string _mediaStorageRoot = string.Empty;
 
     public TestWebApplicationFactory Factory { get; private set; } = null!;
 
@@ -19,7 +20,9 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
     {
         await _databaseContainer.StartAsync();
 
-        Factory = new TestWebApplicationFactory(_databaseContainer.GetConnectionString());
+        _mediaStorageRoot = Path.Combine(Path.GetTempPath(), "pantryplanner-media-tests", Guid.NewGuid().ToString("N"));
+
+        Factory = new TestWebApplicationFactory(_databaseContainer.GetConnectionString(), _mediaStorageRoot);
 
         _ = Factory.CreateClient();
 
@@ -31,6 +34,11 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         if (Factory is not null)
         {
             await Factory.DisposeAsync();
+        }
+
+        if (!string.IsNullOrWhiteSpace(_mediaStorageRoot) && Directory.Exists(_mediaStorageRoot))
+        {
+            Directory.Delete(_mediaStorageRoot, recursive: true);
         }
 
         await _databaseContainer.DisposeAsync();

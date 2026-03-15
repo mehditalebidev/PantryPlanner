@@ -59,5 +59,18 @@
 - Goal: let a user create recipes from an external source with an editable review step.
 - Done when:
   - import request and result shapes are documented
-  - backend exposes an import workflow contract or stub
+  - backend exposes a persisted import workflow contract or stub
+  - URL-based imports return a reviewable recipe draft that reuses normal recipe field names
   - imported data maps into the normal recipe model instead of a separate permanent shape
+  - validation and ownership rules are covered by tests
+
+## MEDIA-001 - Recipe media upload flow
+
+- Suggested branch: `feat/recipe-media-flow`
+- Goal: let an authenticated user upload and manage recipe media files without breaking recipe ownership rules.
+- Done when:
+  - backend exposes upload, protected content, and delete endpoints for recipe media assets
+  - uploaded assets persist storage-backed metadata that recipe CRUD can reuse
+  - recipe media responses include enough metadata to render uploaded content safely
+  - removing media from a recipe or deleting a recipe cleans up stored files
+  - validation and ownership behavior are covered by tests

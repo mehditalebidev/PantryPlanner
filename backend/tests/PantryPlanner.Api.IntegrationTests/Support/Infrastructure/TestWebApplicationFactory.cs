@@ -7,10 +7,12 @@ namespace PantryPlanner.Api.IntegrationTests;
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
+    private readonly string _mediaStorageRoot;
 
-    public TestWebApplicationFactory(string connectionString)
+    public TestWebApplicationFactory(string connectionString, string mediaStorageRoot)
     {
         _connectionString = connectionString;
+        _mediaStorageRoot = mediaStorageRoot;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -21,7 +23,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:PantryPlannerDatabase"] = _connectionString
+                ["ConnectionStrings:PantryPlannerDatabase"] = _connectionString,
+                ["Media:StorageRoot"] = _mediaStorageRoot
             });
         });
     }

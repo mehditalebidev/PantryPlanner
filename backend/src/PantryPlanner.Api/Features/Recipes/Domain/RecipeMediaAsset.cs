@@ -6,12 +6,13 @@ public sealed class RecipeMediaAsset
     {
     }
 
-    private RecipeMediaAsset(string kind, string? storageKey, string url, string? caption, int sortOrder)
+    private RecipeMediaAsset(string kind, string? storageKey, string url, string? contentType, string? caption, int sortOrder)
     {
         Id = Guid.NewGuid();
         Kind = kind.Trim();
         StorageKey = string.IsNullOrWhiteSpace(storageKey) ? null : storageKey.Trim();
         Url = url.Trim();
+        ContentType = string.IsNullOrWhiteSpace(contentType) ? null : contentType.Trim();
         Caption = string.IsNullOrWhiteSpace(caption) ? null : caption.Trim();
         SortOrder = sortOrder;
     }
@@ -28,12 +29,14 @@ public sealed class RecipeMediaAsset
 
     public string Url { get; private set; } = string.Empty;
 
+    public string? ContentType { get; private set; }
+
     public string? Caption { get; private set; }
 
     public int SortOrder { get; private set; }
 
-    public static RecipeMediaAsset Create(string kind, string? storageKey, string url, string? caption, int sortOrder)
+    public static RecipeMediaAsset Create(string kind, string? storageKey, string url, string? contentType, string? caption, int sortOrder)
     {
-        return new RecipeMediaAsset(kind, storageKey, url, caption, sortOrder);
+        return new RecipeMediaAsset(kind, storageKey, url, contentType, caption, sortOrder);
     }
 }

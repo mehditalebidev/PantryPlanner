@@ -12,11 +12,7 @@ Update it whenever work changes status.
 
 ## Backlog
 
-| ID | Title | Notes |
-| --- | --- | --- |
-| IMP-001 | Add recipe import foundation | Can start after recipe persistence shapes are stable. |
-| MEDIA-001 | Harden recipe media upload flow | Start with metadata support and finalize binary upload workflow later. |
-| PANTRY-001 | Add pantry item tracking | Keep deferred until planning and grocery flows are stable. |
+No backlog items currently queued.
 
 ## In Progress
 
@@ -26,6 +22,8 @@ Update it whenever work changes status.
 | REC-001 | Build recipe library vertical slice | Recipe CRUD, ingredient CRUD, seeded starter ingredients, structured step references, and dedicated backend units support are implemented locally; branch/PR still pending. |
 | PLAN-001 | Build meal-plan vertical slice | Backend meal-plan CRUD with flexible slots, stable slot references, and recipe scheduling is implemented locally; branch/PR still pending. |
 | GROC-001 | Build grocery-list generation slice | Backend grocery generation, snapshot persistence, and item checkoff are implemented locally; branch/PR still pending. |
+| IMP-001 | Add recipe import foundation | Backend recipe-import foundation is implemented locally with URL-based draft creation and persisted review payloads; branch/PR still pending. |
+| MEDIA-001 | Harden recipe media upload flow | Backend recipe media upload flow is implemented locally with protected content serving, storage-backed uploads, and cleanup on recipe changes; branch/PR still pending. |
 
 ## In Review
 

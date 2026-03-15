@@ -106,4 +106,10 @@ public sealed class Recipe
         _mediaAssets.AddRange(mediaAssets);
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void AddMediaAsset(RecipeMediaAsset mediaAsset)
+    {
+        _mediaAssets.Add(mediaAsset);
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
