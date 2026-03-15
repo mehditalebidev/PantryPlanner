@@ -1,0 +1,8 @@
+.git/
+.gitignore
+frontend/
+**/bin/
+**/obj/
+**/TestResults/
+README.md
+docs/

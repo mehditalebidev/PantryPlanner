@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pantryplanner}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pantryplanner-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-pantryplanner}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/src/PantryPlanner.Api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__PantryPlannerDatabase: Host=postgres;Port=5432;Database=${POSTGRES_DB:-pantryplanner};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Jwt__Issuer: ${JWT__ISSUER:-PantryPlanner}
+      Jwt__Audience: ${JWT__AUDIENCE:-PantryPlanner.Client}
+      Jwt__SigningKey: ${JWT__SIGNINGKEY:-development-signing-key-with-32-characters-minimum}
+      Jwt__AccessTokenMinutes: ${JWT__ACCESSTOKENMINUTES:-60}
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+volumes:
+  pantryplanner-postgres-data:

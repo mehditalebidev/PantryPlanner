@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5215",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionStrings__PantryPlannerDatabase": "Host=localhost;Port=5432;Database=pantryplanner;Username=postgres;Password=postgres",
+        "Jwt__Issuer": "PantryPlanner",
+        "Jwt__Audience": "PantryPlanner.Client",
+        "Jwt__SigningKey": "development-signing-key-with-32-characters-minimum",
+        "Jwt__AccessTokenMinutes": "60"
+      }
+    }
+  }
+}

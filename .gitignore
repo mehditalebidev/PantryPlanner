@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+.DS_Store
+*.DotSettings.user
+frontend/node_modules/
+frontend/dist/
+backend/TestResults/
+.env
