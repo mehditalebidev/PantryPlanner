@@ -3,21 +3,25 @@ using Microsoft.EntityFrameworkCore;
 using PantryPlanner.Api.Common.Persistence;
 using PantryPlanner.Api.Common.Results;
 using PantryPlanner.Api.Common.Security;
+using PantryPlanner.Api.Features.Ingredients;
 
 namespace PantryPlanner.Api.Features.Users;
 
 public sealed class SignupHandler : IRequestHandler<SignupCommand, Result<AuthResponse>>
 {
     private readonly IRepository _repository;
+    private readonly IIngredientCatalogSeeder _ingredientCatalogSeeder;
     private readonly IPasswordService _passwordService;
     private readonly ITokenService _tokenService;
 
     public SignupHandler(
         IRepository repository,
+        IIngredientCatalogSeeder ingredientCatalogSeeder,
         IPasswordService passwordService,
         ITokenService tokenService)
     {
         _repository = repository;
+        _ingredientCatalogSeeder = ingredientCatalogSeeder;
         _passwordService = passwordService;
         _tokenService = tokenService;
     }
@@ -39,6 +43,7 @@ public sealed class SignupHandler : IRequestHandler<SignupCommand, Result<AuthRe
 
         await _repository.AddAsync(user, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
+        await _ingredientCatalogSeeder.SeedDefaultsForUserAsync(user.Id, cancellationToken);
 
         var issuedToken = _tokenService.CreateAccessToken(user);
 

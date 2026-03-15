@@ -10,7 +10,8 @@
 - The repo is docs-first.
 - `backend/` contains a runnable ASP.NET Core API with local auth, JWT issuance, PostgreSQL wiring, migrations, and tests.
 - `frontend/` is still a placeholder and has no real scaffold or `package.json` yet.
-- The backend currently implements auth and current-user endpoints; recipe, meal-plan, grocery-list, import, and media features are still planned.
+- The backend currently implements auth, ingredient CRUD, recipe CRUD, meal-plan CRUD, grocery-list generation/checkoff, unit lookup/normalization, PostgreSQL migrations, and tests.
+- Recipe import and media upload flows are still planned.
 
 ## Extra Instruction Files
 - Checked and not found: `.cursorrules`, `.cursor/rules/`, `.github/copilot-instructions.md`.

@@ -5,6 +5,7 @@ Use this folder for backend-specific notes that should stay close to implementat
 ## Current Files
 
 - `local-development.md` for local runtime, database, Docker, and test details
+- `frontend-integration-guide.md` for endpoint, entity, and frontend data-flow guidance
 
 ## Guidance
 

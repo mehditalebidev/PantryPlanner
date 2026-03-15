@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PantryPlanner.Api.Common.Persistence;
+using PantryPlanner.Api.Features.Ingredients;
 using PantryPlanner.Api.Features.Users;
 using PantryPlanner.Api.UnitTests.Support;
 
@@ -12,9 +13,10 @@ public sealed class SignupHandlerTests
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
         var repository = new Repository(dbContext);
+        var ingredientCatalogSeeder = new IngredientCatalogSeeder(dbContext);
         var passwordService = new FakePasswordService();
         var tokenService = new FakeTokenService();
-        var handler = new SignupHandler(repository, passwordService, tokenService);
+        var handler = new SignupHandler(repository, ingredientCatalogSeeder, passwordService, tokenService);
 
         var result = await handler.Handle(new SignupCommand
         {
@@ -33,6 +35,7 @@ public sealed class SignupHandlerTests
         Assert.Equal("mehdi@example.com", savedUser.Email);
         Assert.Equal("Mehdi", savedUser.DisplayName);
         Assert.Equal("hashed::Password123!", savedUser.PasswordHash);
+        Assert.True(await dbContext.Ingredients.AnyAsync(ingredient => ingredient.UserId == savedUser.Id));
     }
 
     [Fact]
@@ -45,7 +48,8 @@ public sealed class SignupHandlerTests
         await dbContext.SaveChangesAsync();
 
         var repository = new Repository(dbContext);
-        var handler = new SignupHandler(repository, new FakePasswordService(), new FakeTokenService());
+        var ingredientCatalogSeeder = new IngredientCatalogSeeder(dbContext);
+        var handler = new SignupHandler(repository, ingredientCatalogSeeder, new FakePasswordService(), new FakeTokenService());
 
         var result = await handler.Handle(new SignupCommand
         {
