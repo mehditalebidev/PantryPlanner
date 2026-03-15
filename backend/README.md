@@ -6,8 +6,9 @@ This directory contains the PantryPlanner backend scaffold.
 
 - The backend centers on a single ASP.NET Core API project with a vertical-slice layout.
 - Local email/password auth is implemented with signup, login, and `users/me` endpoints.
-- PostgreSQL, EF Core migrations, JWT auth, ProblemDetails responses, and test coverage are wired up.
-- Recipe, meal-plan, grocery-list, import, and media slices are still planned.
+- Recipe CRUD, ingredient CRUD, meal-plan CRUD, grocery generation/checkoff, seeded starter ingredients, and unit lookup/normalization are implemented.
+- PostgreSQL, EF Core migrations, JWT auth, ProblemDetails responses, seeded user ingredient catalogs, and test coverage are wired up.
+- Import and media upload slices are still planned.
 - `docs/` holds backend-specific implementation notes and agent-readable guidance.
 
 ## Solution Layout
@@ -20,6 +21,13 @@ backend/
     local-development.md
   src/
     PantryPlanner.Api/
+      Features/
+        GroceryLists/
+        Ingredients/
+        MealPlans/
+        Recipes/
+        Units/
+        Users/
   tests/
     PantryPlanner.Api.UnitTests/
     PantryPlanner.Api.IntegrationTests/
@@ -63,5 +71,6 @@ Run from the repo root:
 
 - Keep backend-only working notes under `backend/docs/`.
 - Use `backend/docs/local-development.md` for runtime and testing details.
+- Use `backend/docs/frontend-integration-guide.md` for the entity and endpoint relationship guide that the frontend can build against now.
 - Development OpenAPI JSON is exposed at `/openapi/v1.json` and the Scalar UI at `/docs`.
 - Keep slice-local controllers, commands, validators, handlers, DTOs, entities, and EF configuration together under `backend/src/PantryPlanner.Api/Features/`.

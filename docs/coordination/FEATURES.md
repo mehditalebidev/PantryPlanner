@@ -25,7 +25,10 @@
 - Goal: let an authenticated user create, edit, list, and view recipes.
 - Done when:
   - recipe CRUD exists in backend and follows the shared contract
-  - recipes support ingredient lines, ordered steps, and media metadata
+  - ingredient CRUD exists in backend and each user starts with a seeded ingredient catalog
+  - recipes support ingredient entities, recipe-specific measurements, ordered steps, and media metadata
+  - recipe steps can reference recipe ingredients through structured links
+  - supported unit definitions and normalization rules are documented and exposed through a dedicated units slice
   - backend validation and ownership checks are covered by tests
   - frontend can create and browse recipes once the scaffold exists
 
@@ -36,6 +39,7 @@
 - Done when:
   - meal plans support date ranges and default or custom meal slots
   - users can schedule recipes into dated entries
+  - writes support stable slot references for nested create and update payloads
   - validation covers date-range and slot-name rules
   - contract and docs stay aligned with implementation
 
@@ -45,7 +49,7 @@
 - Goal: generate a grocery list from a selected plan window.
 - Done when:
   - backend aggregates ingredient requirements across planned recipes
-  - quantities and units stay realistic and explicit
+  - quantities scale correctly for servings overrides and stay explicit about unit codes
   - grocery item checkoff state can be updated after generation
   - tests cover aggregation behavior and ownership boundaries
 

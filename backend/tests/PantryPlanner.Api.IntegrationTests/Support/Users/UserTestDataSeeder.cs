@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PantryPlanner.Api.Common.Persistence;
 using PantryPlanner.Api.Common.Security;
+using PantryPlanner.Api.Features.Ingredients;
 using PantryPlanner.Api.Features.Users;
 
 namespace PantryPlanner.Api.IntegrationTests;
@@ -32,6 +33,9 @@ public static class UserTestDataSeeder
 
         await dbContext.Users.AddAsync(user);
         await dbContext.SaveChangesAsync();
+
+        var ingredientCatalogSeeder = scope.ServiceProvider.GetRequiredService<IIngredientCatalogSeeder>();
+        await ingredientCatalogSeeder.SeedDefaultsForUserAsync(user.Id, CancellationToken.None);
 
         return user;
     }

@@ -9,14 +9,11 @@ Update it whenever work changes status.
 | ID | Title | Notes |
 | --- | --- | --- |
 | FE-001 | Initialize frontend shell | Set up the real frontend scaffold with routing, providers, and auth shell wiring. |
-| REC-001 | Build recipe library vertical slice | Start with recipe CRUD, ingredients, steps, and media metadata support. |
-| PLAN-001 | Build meal-plan vertical slice | Add planning ranges, default and custom slots, and recipe scheduling. |
 
 ## Backlog
 
 | ID | Title | Notes |
 | --- | --- | --- |
-| GROC-001 | Build grocery-list generation slice | Depends on stable recipe and meal-plan data. |
 | IMP-001 | Add recipe import foundation | Can start after recipe persistence shapes are stable. |
 | MEDIA-001 | Harden recipe media upload flow | Start with metadata support and finalize binary upload workflow later. |
 | PANTRY-001 | Add pantry item tracking | Keep deferred until planning and grocery flows are stable. |
@@ -26,6 +23,9 @@ Update it whenever work changes status.
 | ID | Title | Notes |
 | --- | --- | --- |
 | AUTH-001 | Preserve auth scaffold during PantryPlanner pivot | Keep signup, login, `users/me`, JWT wiring, and tests healthy while new slices are introduced. |
+| REC-001 | Build recipe library vertical slice | Recipe CRUD, ingredient CRUD, seeded starter ingredients, structured step references, and dedicated backend units support are implemented locally; branch/PR still pending. |
+| PLAN-001 | Build meal-plan vertical slice | Backend meal-plan CRUD with flexible slots, stable slot references, and recipe scheduling is implemented locally; branch/PR still pending. |
+| GROC-001 | Build grocery-list generation slice | Backend grocery generation, snapshot persistence, and item checkoff are implemented locally; branch/PR still pending. |
 
 ## In Review
 

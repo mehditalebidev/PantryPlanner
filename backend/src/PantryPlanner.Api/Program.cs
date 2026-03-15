@@ -8,6 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 using PantryPlanner.Api.Common.Behaviors;
 using PantryPlanner.Api.Common.Persistence;
 using PantryPlanner.Api.Common.Security;
+using PantryPlanner.Api.Features.GroceryLists;
+using PantryPlanner.Api.Features.Ingredients;
+using PantryPlanner.Api.Features.MealPlans;
+using PantryPlanner.Api.Features.Recipes;
+using PantryPlanner.Api.Features.Units;
 using PantryPlanner.Api.Middleware;
 using Scalar.AspNetCore;
 using System.Text;
@@ -47,8 +52,14 @@ builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddScoped<IRepository, Repository>();
+builder.Services.AddScoped<IIngredientCatalogSeeder, IngredientCatalogSeeder>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddSingleton<IUnitCatalog, InMemoryUnitCatalog>();
+builder.Services.AddScoped<IMeasurementNormalizer, MeasurementNormalizer>();
+builder.Services.AddScoped<IRecipeContentFactory, RecipeContentFactory>();
+builder.Services.AddScoped<IMealPlanContentFactory, MealPlanContentFactory>();
+builder.Services.AddScoped<IGroceryListGenerator, GroceryListGenerator>();
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is missing.");
@@ -131,6 +142,9 @@ using (var scope = app.Services.CreateScope())
     {
         await dbContext.Database.EnsureCreatedAsync();
     }
+
+    var ingredientCatalogSeeder = scope.ServiceProvider.GetRequiredService<IIngredientCatalogSeeder>();
+    await ingredientCatalogSeeder.SeedDefaultsForExistingUsersAsync(CancellationToken.None);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

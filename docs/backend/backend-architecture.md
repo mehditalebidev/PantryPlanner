@@ -13,6 +13,47 @@ PantryPlanner.Api/
     Results/
     Security/
   Features/
+    GroceryLists/
+      Endpoints/
+      GenerateGroceryList/
+      GetGroceryList/
+      Persistence/
+      Shared/
+      UpdateGroceryListItem/
+    Ingredients/
+      CreateIngredient/
+      DeleteIngredient/
+      Domain/
+      Endpoints/
+      GetIngredient/
+      ListIngredients/
+      Persistence/
+      Shared/
+      UpdateIngredient/
+    MealPlans/
+      CreateMealPlan/
+      DeleteMealPlan/
+      Domain/
+      Endpoints/
+      GetMealPlan/
+      ListMealPlans/
+      Persistence/
+      Shared/
+      UpdateMealPlan/
+    Recipes/
+      CreateRecipe/
+      DeleteRecipe/
+      Domain/
+      Endpoints/
+      GetRecipe/
+      ListRecipes/
+      Persistence/
+      Shared/
+      UpdateRecipe/
+    Units/
+      Endpoints/
+      ListUnits/
+      Shared/
     Users/
       Domain/
       Endpoints/
@@ -41,14 +82,13 @@ PantryPlanner.Api/
 - keep validation close to commands and queries
 - use `Common/` only for truly cross-cutting concerns
 - keep user ownership explicit in every query and mutation
+- keep backend-owned unit normalization in the dedicated `Units` slice so recipe persistence, future planner aggregation, and future grocery generation all share one source of truth
+- keep seeded ingredient catalog behavior inside the `Ingredients` slice rather than inside auth or recipes
 
 ## Planned Slices
 
-Near-term slices should follow the same structure:
+Remaining near-term slices should follow the same structure:
 
-- `Recipes`
-- `MealPlans`
-- `GroceryLists`
 - `RecipeImports`
 - `Media` if it becomes large enough to justify its own slice
 
