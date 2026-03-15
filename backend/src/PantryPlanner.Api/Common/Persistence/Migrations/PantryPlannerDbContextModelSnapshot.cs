@@ -231,6 +231,53 @@ namespace PantryPlanner.Api.Common.Persistence.Migrations
                     b.ToTable("planned_meals", (string)null);
                 });
 
+            modelBuilder.Entity("PantryPlanner.Api.Features.RecipeImports.RecipeImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DraftJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("draft_json");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SourceUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WarningsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("warnings_json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("recipe_imports", (string)null);
+                });
+
             modelBuilder.Entity("PantryPlanner.Api.Features.Recipes.Recipe", b =>
                 {
                     b.Property<Guid>("Id")
@@ -336,6 +383,10 @@ namespace PantryPlanner.Api.Common.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -359,6 +410,9 @@ namespace PantryPlanner.Api.Common.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RecipeId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
 
                     b.ToTable("recipe_media_assets", (string)null);
                 });

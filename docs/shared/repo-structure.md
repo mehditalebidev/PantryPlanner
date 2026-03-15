@@ -50,7 +50,6 @@ frontend/
       meal-plans/
       grocery-lists/
       recipe-imports/
-      pantry/
     hooks/
     lib/
     pages/
@@ -110,7 +109,6 @@ backend/
 - `MealPlans` for planning ranges, slots, and scheduled recipes
 - `GroceryLists` for generated shopping projections and item state
 - `RecipeImports` for source parsing and import status
-- `PantryItems` if pantry support becomes part of the near-term roadmap
 
 ## Ownership Guidance
 

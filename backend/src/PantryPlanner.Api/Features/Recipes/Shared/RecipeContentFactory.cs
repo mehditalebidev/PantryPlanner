@@ -19,6 +19,7 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
 
     public async Task<Result<RecipeContentDraft>> BuildAsync(
         Guid userId,
+        Guid? recipeId,
         IReadOnlyCollection<RecipeIngredientWriteModel> ingredientRequests,
         IReadOnlyCollection<RecipeStepWriteModel> stepRequests,
         IReadOnlyCollection<RecipeMediaAssetWriteModel> mediaRequests,
@@ -28,6 +29,12 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
         if (existingIngredientsById is null)
         {
             return Result<RecipeContentDraft>.Failure(RecipeErrors.InvalidIngredientReference());
+        }
+
+        var existingMediaByStorageKey = await LoadMediaByStorageKeyAsync(userId, recipeId, mediaRequests, cancellationToken);
+        if (existingMediaByStorageKey is null)
+        {
+            return Result<RecipeContentDraft>.Failure(RecipeErrors.InvalidMediaReference());
         }
 
         var existingIngredientsByName = await LoadIngredientsByNameAsync(userId, ingredientRequests, cancellationToken);
@@ -80,17 +87,74 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
                 step.IngredientReferenceKeys.Select(referenceKey => recipeIngredientsByReferenceKey[referenceKey])))
             .ToArray();
 
-        var recipeMediaAssets = mediaRequests
-            .OrderBy(mediaAsset => mediaAsset.SortOrder)
-            .Select(mediaAsset => RecipeMediaAsset.Create(
+        var recipeMediaAssets = new List<RecipeMediaAsset>(mediaRequests.Count);
+
+        foreach (var mediaAsset in mediaRequests.OrderBy(mediaAsset => mediaAsset.SortOrder))
+        {
+            if (!string.IsNullOrWhiteSpace(mediaAsset.StorageKey))
+            {
+                var storageKey = mediaAsset.StorageKey.Trim();
+                var existingMedia = existingMediaByStorageKey[storageKey];
+
+                if (!string.Equals(existingMedia.Kind, mediaAsset.Kind, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Result<RecipeContentDraft>.Failure(RecipeErrors.InvalidMediaReference());
+                }
+
+                recipeMediaAssets.Add(RecipeMediaAsset.Create(
+                    existingMedia.Kind,
+                    existingMedia.StorageKey,
+                    existingMedia.Url,
+                    existingMedia.ContentType,
+                    mediaAsset.Caption,
+                    mediaAsset.SortOrder));
+
+                continue;
+            }
+
+            recipeMediaAssets.Add(RecipeMediaAsset.Create(
                 mediaAsset.Kind,
-                mediaAsset.StorageKey,
+                null,
                 mediaAsset.Url,
+                mediaAsset.ContentType,
                 mediaAsset.Caption,
-                mediaAsset.SortOrder))
-            .ToArray();
+                mediaAsset.SortOrder));
+        }
 
         return Result<RecipeContentDraft>.Success(new RecipeContentDraft(recipeIngredients, recipeSteps, recipeMediaAssets));
+    }
+
+    private async Task<Dictionary<string, RecipeMediaAsset>?> LoadMediaByStorageKeyAsync(
+        Guid userId,
+        Guid? recipeId,
+        IReadOnlyCollection<RecipeMediaAssetWriteModel> mediaRequests,
+        CancellationToken cancellationToken)
+    {
+        var storageKeys = mediaRequests
+            .Where(mediaAsset => !string.IsNullOrWhiteSpace(mediaAsset.StorageKey))
+            .Select(mediaAsset => mediaAsset.StorageKey!.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (storageKeys.Length == 0)
+        {
+            return new Dictionary<string, RecipeMediaAsset>(StringComparer.Ordinal);
+        }
+
+        if (!recipeId.HasValue)
+        {
+            return null;
+        }
+
+        var mediaByStorageKey = await _repository.Query<RecipeMediaAsset>()
+            .Where(mediaAsset =>
+                mediaAsset.RecipeId == recipeId.Value &&
+                mediaAsset.Recipe.UserId == userId &&
+                mediaAsset.StorageKey != null &&
+                storageKeys.Contains(mediaAsset.StorageKey))
+            .ToDictionaryAsync(mediaAsset => mediaAsset.StorageKey!, cancellationToken);
+
+        return mediaByStorageKey.Count == storageKeys.Length ? mediaByStorageKey : null;
     }
 
     private async Task<Dictionary<Guid, Ingredient>?> LoadIngredientsByIdAsync(

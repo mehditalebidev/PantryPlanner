@@ -11,6 +11,9 @@ public sealed class RecipeMediaAssetConfiguration : IEntityTypeConfiguration<Rec
 
         builder.HasKey(mediaAsset => mediaAsset.Id);
 
+        builder.HasIndex(mediaAsset => mediaAsset.StorageKey)
+            .IsUnique();
+
         builder.Property(mediaAsset => mediaAsset.Kind)
             .HasMaxLength(50)
             .IsRequired();
@@ -21,6 +24,9 @@ public sealed class RecipeMediaAssetConfiguration : IEntityTypeConfiguration<Rec
         builder.Property(mediaAsset => mediaAsset.Url)
             .HasMaxLength(1000)
             .IsRequired();
+
+        builder.Property(mediaAsset => mediaAsset.ContentType)
+            .HasMaxLength(200);
 
         builder.Property(mediaAsset => mediaAsset.Caption)
             .HasMaxLength(500);

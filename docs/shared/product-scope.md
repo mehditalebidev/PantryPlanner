@@ -29,7 +29,7 @@ The first usable version includes:
 ## Explicitly Deferred From MVP
 
 - household collaboration
-- pantry inventory tracking beyond a lightweight placeholder
+- pantry inventory tracking
 - nutrition analysis
 - shopping price comparison
 - barcode scanning
@@ -50,7 +50,6 @@ The first usable version includes:
 ### Phase 2 - Productivity
 
 - richer recipe import workflows
-- pantry item tracking
 - grocery list editing, substitutions, and checkoff state
 - recipe search, filtering, and tagging
 - media upload hardening and cleanup rules
@@ -77,4 +76,4 @@ The first usable version includes:
 - a user can manage recipes with realistic ingredient and step data
 - a user can build meal plans with flexible slots and date ranges
 - a user can generate a grocery list that reflects the selected plan window
-- the architecture remains easy to extend with imports, pantry items, and media
+- the architecture remains easy to extend with imports and media

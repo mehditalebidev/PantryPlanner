@@ -10,7 +10,9 @@ using PantryPlanner.Api.Common.Persistence;
 using PantryPlanner.Api.Common.Security;
 using PantryPlanner.Api.Features.GroceryLists;
 using PantryPlanner.Api.Features.Ingredients;
+using PantryPlanner.Api.Features.Media;
 using PantryPlanner.Api.Features.MealPlans;
+using PantryPlanner.Api.Features.RecipeImports;
 using PantryPlanner.Api.Features.Recipes;
 using PantryPlanner.Api.Features.Units;
 using PantryPlanner.Api.Middleware;
@@ -42,6 +44,7 @@ builder.Services.AddOpenApi("v1");
 builder.Services.AddProblemDetails();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<MediaOptions>(builder.Configuration.GetSection(MediaOptions.SectionName));
 
 builder.Services.AddDbContext<PantryPlannerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PantryPlannerDatabase")));
@@ -55,11 +58,13 @@ builder.Services.AddScoped<IRepository, Repository>();
 builder.Services.AddScoped<IIngredientCatalogSeeder, IngredientCatalogSeeder>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IMediaStorage, LocalMediaStorage>();
 builder.Services.AddSingleton<IUnitCatalog, InMemoryUnitCatalog>();
 builder.Services.AddScoped<IMeasurementNormalizer, MeasurementNormalizer>();
 builder.Services.AddScoped<IRecipeContentFactory, RecipeContentFactory>();
 builder.Services.AddScoped<IMealPlanContentFactory, MealPlanContentFactory>();
 builder.Services.AddScoped<IGroceryListGenerator, GroceryListGenerator>();
+builder.Services.AddScoped<IRecipeImportDraftFactory, RecipeImportDraftFactory>();
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is missing.");

@@ -197,10 +197,12 @@ internal sealed class RecipeMediaAssetWriteModelValidator : AbstractValidator<Re
         RuleFor(media => media.Url)
             .NotEmpty()
             .WithMessage("Media URL is required.")
-            .Must(url => Uri.TryCreate(url, UriKind.Absolute, out _))
-            .WithMessage("Media URL must be a valid absolute URL.")
             .MaximumLength(1000)
             .WithMessage("Media URL must be 1000 characters or fewer.");
+
+        RuleFor(media => media.ContentType)
+            .MaximumLength(200)
+            .WithMessage("ContentType must be 200 characters or fewer.");
 
         RuleFor(media => media.Caption)
             .MaximumLength(500)
@@ -209,5 +211,36 @@ internal sealed class RecipeMediaAssetWriteModelValidator : AbstractValidator<Re
         RuleFor(media => media.SortOrder)
             .GreaterThan(0)
             .WithMessage("Media sort order must be greater than 0.");
+
+        RuleFor(media => media)
+            .Custom((media, context) =>
+            {
+                if (!string.IsNullOrWhiteSpace(media.StorageKey))
+                {
+                    if (!IsRootedRelativeUrl(media.Url))
+                    {
+                        context.AddFailure(nameof(media.Url), "Media URL must be a valid rooted relative URL when StorageKey is provided.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(media.ContentType))
+                    {
+                        context.AddFailure(nameof(media.ContentType), "ContentType is required when StorageKey is provided.");
+                    }
+
+                    return;
+                }
+
+                if (!Uri.TryCreate(media.Url, UriKind.Absolute, out _))
+                {
+                    context.AddFailure(nameof(media.Url), "Media URL must be a valid absolute URL when StorageKey is not provided.");
+                }
+            });
+    }
+
+    private static bool IsRootedRelativeUrl(string? url)
+    {
+        return !string.IsNullOrWhiteSpace(url)
+            && url.StartsWith("/", StringComparison.Ordinal)
+            && !Uri.TryCreate(url, UriKind.Absolute, out _);
     }
 }

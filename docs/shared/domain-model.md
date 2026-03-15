@@ -163,13 +163,16 @@ Key fields:
 - `Kind`
 - `StorageKey`
 - `Url`
+- `ContentType`
 - `Caption` nullable
 - `SortOrder`
 
 Rules:
 
-- Media metadata should be tracked even if binary upload handling evolves later.
+- Media metadata should track the storage identifier and response content type for uploaded files.
 - `Kind` starts simple with values such as `image` and `video`.
+- Uploaded media stays user-scoped through the owning recipe and should be served through an authenticated backend endpoint.
+- Removing media from a recipe or deleting a recipe should also clean up stored uploaded files.
 
 ### MealPlan
 
@@ -264,11 +267,29 @@ Rules:
 - When a normalized quantity exists, grocery output should prefer the normalized base unit code for deterministic aggregation.
 - When automatic conversion is not safe, separate grocery entries should be preserved instead of guessing.
 
+### RecipeImport
+
+Represents a user-scoped recipe import attempt and its reviewable draft.
+
+Key fields:
+
+- `Id`
+- `UserId`
+- `SourceType`
+- `SourceUrl`
+- `Status`
+- `Draft`
+- `CreatedAt`
+- `UpdatedAt`
+
+Rules:
+
+- Recipe imports are user-scoped review artifacts, not permanent recipe records.
+- The foundation flow starts with URL-based imports and returns a draft for review.
+- The stored draft uses the same conceptual shape as recipe create and update payloads so the client can hand it to the normal recipe editor flow.
+- Import drafts may be incomplete and require user edits before saving through recipe CRUD.
+
 ## Future Entities
-
-### ImportSource
-
-Represents structured metadata about a recipe import origin.
 
 ### PantryItem
 

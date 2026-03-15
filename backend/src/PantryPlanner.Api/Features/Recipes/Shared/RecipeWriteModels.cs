@@ -36,6 +36,8 @@ public sealed record RecipeMediaAssetWriteModel
 
     public string Url { get; init; } = string.Empty;
 
+    public string? ContentType { get; init; }
+
     public string? Caption { get; init; }
 
     public int SortOrder { get; init; }

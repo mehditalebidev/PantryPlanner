@@ -60,13 +60,14 @@ public static class RecipeMappings
                 .ToArray());
     }
 
-    private static RecipeMediaAssetResponse ToResponse(this RecipeMediaAsset mediaAsset)
+    public static RecipeMediaAssetResponse ToResponse(this RecipeMediaAsset mediaAsset)
     {
         return new RecipeMediaAssetResponse(
             mediaAsset.Id,
             mediaAsset.Kind,
             mediaAsset.StorageKey,
             mediaAsset.Url,
+            mediaAsset.ContentType,
             mediaAsset.Caption,
             mediaAsset.SortOrder);
     }

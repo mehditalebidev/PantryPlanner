@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PantryPlanner.Api.Features.Ingredients;
 using PantryPlanner.Api.Features.MealPlans;
+using PantryPlanner.Api.Features.RecipeImports;
 using PantryPlanner.Api.Features.Recipes;
 using PantryPlanner.Api.Features.Users;
 using PantryPlanner.Api.Features.GroceryLists;
@@ -37,6 +38,8 @@ public sealed class PantryPlannerDbContext : DbContext
     public DbSet<GroceryList> GroceryLists => Set<GroceryList>();
 
     public DbSet<GroceryListItem> GroceryListItems => Set<GroceryListItem>();
+
+    public DbSet<RecipeImport> RecipeImports => Set<RecipeImport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

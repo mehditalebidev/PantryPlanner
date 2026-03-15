@@ -84,17 +84,7 @@ public sealed class RecipeEndpointsTests : IClassFixture<IntegrationTestFixture>
                     ingredientReferenceKeys = new[] { "chicken" }
                 }
             },
-            media = new object[]
-            {
-                new
-                {
-                    kind = "image",
-                    storageKey = $"recipes/{uniquePrefix}.jpg",
-                    url = "https://cdn.example.com/recipes/test.jpg",
-                    caption = "Finished dish",
-                    sortOrder = 1
-                }
-            }
+            media = Array.Empty<object>()
         });
 
         Assert.Equal(HttpStatusCode.OK, createRecipeResponse.StatusCode);

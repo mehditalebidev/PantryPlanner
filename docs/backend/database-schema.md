@@ -99,13 +99,41 @@ Current fields:
 - `kind`
 - `storage_key`
 - `url`
+- `content_type`
 - `caption`
 - `sort_order`
+
+Notes:
+
+- `storage_key` should uniquely identify a stored upload when the media asset points to backend-managed file storage
+- `content_type` is required for uploaded files so the backend can serve them correctly
 
 ## Seeded Reference Data
 
 - the backend seeds a large starter ingredient catalog for each user
 - unit definitions are stored in backend code and exposed through `GET /api/v1/units`
+
+## Current Import Tables
+
+### `recipe_imports`
+
+Current fields:
+
+- `id`
+- `user_id`
+- `source_type`
+- `source_url`
+- `status`
+- `draft_json`
+- `warnings_json`
+- `created_at`
+- `updated_at`
+
+Notes:
+
+- import drafts are persisted review snapshots rather than permanent recipe records
+- `draft_json` stores a recipe-shaped document that the frontend can hand to recipe create and update flows after review
+- the MVP foundation currently stores URL-based imports with starter draft inference only
 
 ## Current Meal Planning And Grocery Tables
 

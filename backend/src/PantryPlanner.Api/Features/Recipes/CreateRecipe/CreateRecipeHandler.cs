@@ -28,6 +28,7 @@ public sealed class CreateRecipeHandler : IRequestHandler<CreateRecipeCommand, R
 
         var contentResult = await _recipeContentFactory.BuildAsync(
             request.UserId,
+            null,
             request.Ingredients,
             request.Steps,
             request.Media,

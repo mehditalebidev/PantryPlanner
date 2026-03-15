@@ -6,7 +6,7 @@ PantryPlanner is a meal-planning app focused on recipes, flexible meal schedules
 
 - This repository is docs-first and mid-pivot into PantryPlanner.
 - The backend workspace contains a runnable ASP.NET Core API with local auth, JWT issuance, PostgreSQL wiring, migrations, and tests.
-- The backend already implements ingredients, recipes, meal plans, grocery generation/checkoff, and units alongside auth.
+- The backend already implements ingredients, recipes, meal plans, grocery generation/checkoff, recipe-import foundation, and units alongside auth.
 - The frontend workspace is still a placeholder and does not yet contain a real app scaffold.
 - Product docs under `docs/` now describe the PantryPlanner direction and should be treated as the source of truth.
 
