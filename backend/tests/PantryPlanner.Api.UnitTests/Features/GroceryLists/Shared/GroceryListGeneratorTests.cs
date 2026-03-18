@@ -14,8 +14,7 @@ public sealed class GroceryListGeneratorTests
     public async Task GenerateAsync_AggregatesNormalizedAndAuthoredQuantities_WithServingsOverrides()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
-        var generator = new GroceryListGenerator(repository);
+        var generator = new GroceryListGenerator(dbContext);
         var userId = Guid.NewGuid();
 
         var chicken = Ingredient.Create(userId, "Chicken thighs");
@@ -66,8 +65,7 @@ public sealed class GroceryListGeneratorTests
     public async Task GenerateAsync_ReturnsNotFound_WhenMealPlanDoesNotExist()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
-        var generator = new GroceryListGenerator(repository);
+        var generator = new GroceryListGenerator(dbContext);
 
         var result = await generator.GenerateAsync(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None);
 

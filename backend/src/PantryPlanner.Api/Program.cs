@@ -54,7 +54,6 @@ builder.Services.AddMediatR(configuration =>
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-builder.Services.AddScoped<IRepository, Repository>();
 builder.Services.AddScoped<IIngredientCatalogSeeder, IngredientCatalogSeeder>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService, TokenService>();

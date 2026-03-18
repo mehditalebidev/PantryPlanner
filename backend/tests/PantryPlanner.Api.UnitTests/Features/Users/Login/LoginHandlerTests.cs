@@ -17,8 +17,7 @@ public sealed class LoginHandlerTests
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
 
-        var repository = new Repository(dbContext);
-        var handler = new LoginHandler(repository, passwordService, new FakeTokenService());
+        var handler = new LoginHandler(dbContext, passwordService, new FakeTokenService());
 
         var result = await handler.Handle(new LoginCommand
         {
@@ -36,8 +35,7 @@ public sealed class LoginHandlerTests
     public async Task Handle_ReturnsFailure_WhenUserDoesNotExist()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
-        var handler = new LoginHandler(repository, new FakePasswordService(), new FakeTokenService());
+        var handler = new LoginHandler(dbContext, new FakePasswordService(), new FakeTokenService());
 
         var result = await handler.Handle(new LoginCommand
         {
@@ -59,8 +57,7 @@ public sealed class LoginHandlerTests
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
 
-        var repository = new Repository(dbContext);
-        var handler = new LoginHandler(repository, passwordService, new FakeTokenService());
+        var handler = new LoginHandler(dbContext, passwordService, new FakeTokenService());
 
         var result = await handler.Handle(new LoginCommand
         {

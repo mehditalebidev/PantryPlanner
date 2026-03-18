@@ -24,6 +24,7 @@ No backlog items currently queued.
 | GROC-001 | Build grocery-list generation slice | Backend grocery generation, snapshot persistence, and item checkoff are implemented locally; branch/PR still pending. |
 | IMP-001 | Add recipe import foundation | Backend recipe-import foundation is implemented locally with URL-based draft creation and persisted review payloads; branch/PR still pending. |
 | MEDIA-001 | Harden recipe media upload flow | Backend recipe media upload flow is implemented locally with protected content serving, storage-backed uploads, and cleanup on recipe changes; branch/PR still pending. |
+| QUAL-001 | Consolidate backend endpoint slice files | Flat one-file endpoint modules, command-local mapping helpers, direct `PantryPlannerDbContext` usage, and domain/persistence files moved out of `Features/` are implemented locally; branch/PR still pending. |
 
 ## In Review
 

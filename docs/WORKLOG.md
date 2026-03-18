@@ -4,6 +4,8 @@ Record meaningful project changes here in reverse chronological order.
 
 ## Entries
 
+- 2026-03-18 | QUAL-001 | in_progress | local build | Consolidated backend endpoints so each endpoint folder has one `.cs` file with the action, request, validator, and handler, removed the thin generic repository layer, updated docs, and verified the backend solution build/tests pass.
+- 2026-03-18 | QUAL-001 | in_progress | local build | Flattened single-file endpoint folders, moved response mapping extensions onto request types, relocated entities to `src/PantryPlanner.Api/Domain/` and EF configurations to `src/PantryPlanner.Api/Common/Persistence/Configurations/`, and kept backend build/tests green.
 - 2026-03-15 | MEDIA-001 | in_progress | local build | Started backend recipe-media flow work for storage-backed uploads, protected content access, and cleanup behavior.
 - 2026-03-15 | MEDIA-001 | in_progress | local build | Implemented the backend recipe-media upload/content/delete flow, added migrations/tests, and verified the full backend test suite passes.
 - 2026-03-15 | IMP-001 | in_progress | local build | Started backend recipe-import foundation work for URL-based draft generation, persisted review state, and frontend-ready import contract docs.

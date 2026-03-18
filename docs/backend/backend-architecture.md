@@ -10,71 +10,75 @@ PantryPlanner.Api/
     Api/
     Behaviors/
     Persistence/
+      Configurations/
+      Migrations/
     Results/
     Security/
+  Domain/
+    GroceryList.cs
+    GroceryListItem.cs
+    Ingredient.cs
+    MealPlan.cs
+    MealSlot.cs
+    PlannedMeal.cs
+    Recipe.cs
+    RecipeImport.cs
+    RecipeIngredient.cs
+    RecipeMediaAsset.cs
+    RecipeStep.cs
+    RecipeStepIngredientReference.cs
+    User.cs
   Features/
     GroceryLists/
-      Endpoints/
-      GenerateGroceryList/
-      GetGroceryList/
-      Persistence/
+      GenerateGroceryList.cs
+      GetGroceryList.cs
+      GroceryListsController.cs
       Shared/
-      UpdateGroceryListItem/
+      UpdateGroceryListItem.cs
     Ingredients/
-      CreateIngredient/
-      DeleteIngredient/
-      Domain/
-      Endpoints/
-      GetIngredient/
-      ListIngredients/
-      Persistence/
+      CreateIngredient.cs
+      DeleteIngredient.cs
+      GetIngredient.cs
+      IngredientsController.cs
+      ListIngredients.cs
       Shared/
-      UpdateIngredient/
+      UpdateIngredient.cs
     MealPlans/
-      CreateMealPlan/
-      DeleteMealPlan/
-      Domain/
-      Endpoints/
-      GetMealPlan/
-      ListMealPlans/
-      Persistence/
+      CreateMealPlan.cs
+      DeleteMealPlan.cs
+      GetMealPlan.cs
+      ListMealPlans.cs
+      MealPlansController.cs
       Shared/
-      UpdateMealPlan/
+      UpdateMealPlan.cs
     Media/
-      DeleteRecipeMedia/
       Endpoints/
-      GetMediaContent/
+      DeleteRecipeMedia.cs
+      GetMediaContent.cs
       Shared/
-      UploadRecipeMedia/
+      UploadRecipeMedia.cs
     RecipeImports/
-      CreateRecipeImport/
-      Domain/
-      Endpoints/
-      GetRecipeImport/
-      Persistence/
+      CreateRecipeImport.cs
+      GetRecipeImport.cs
+      RecipeImportsController.cs
       Shared/
     Recipes/
-      CreateRecipe/
-      DeleteRecipe/
-      Domain/
-      Endpoints/
-      GetRecipe/
-      ListRecipes/
-      Persistence/
+      CreateRecipe.cs
+      DeleteRecipe.cs
+      GetRecipe.cs
+      ListRecipes.cs
+      RecipesController.cs
       Shared/
-      UpdateRecipe/
+      UpdateRecipe.cs
     Units/
-      Endpoints/
-      ListUnits/
+      ListUnits.cs
       Shared/
     Users/
-      Domain/
       Endpoints/
-      GetCurrentUser/
-      Login/
-      Persistence/
+      GetCurrentUser.cs
+      Login.cs
       Shared/
-      Signup/
+      Signup.cs
   Program.cs
 ```
 
@@ -87,14 +91,18 @@ PantryPlanner.Api/
 - JWT bearer auth
 - ProblemDetails responses
 - Scalar/OpenAPI in development
+- direct `PantryPlannerDbContext` injection instead of a thin generic repository wrapper
 
 ## Architectural Rules
 
-- keep controllers thin
-- put business logic in handlers and feature-local domain types
+- keep route attributes and shared controller setup in thin partial controller shells; use an `Endpoints/` folder only when a slice has more than one controller shell
+- keep each endpoint as a single `.cs` file directly under its feature folder with the action, request, validator, handler, and request-local mapping extensions together
+- put business logic in handlers and keep domain entities under the top-level `Domain/` folder
 - keep validation close to commands and queries
 - use `Common/` only for truly cross-cutting concerns
 - keep user ownership explicit in every query and mutation
+- inject `PantryPlannerDbContext` directly unless a dedicated shared abstraction adds real behavior
+- keep EF entity configuration under `Common/Persistence/Configurations/` instead of feature folders
 - keep backend-owned unit normalization in the dedicated `Units` slice so recipe persistence, future planner aggregation, and future grocery generation all share one source of truth
 - keep seeded ingredient catalog behavior inside the `Ingredients` slice rather than inside auth or recipes
 - keep recipe-import drafts mapped to recipe field names so import review can flow into standard recipe creation instead of a separate save path

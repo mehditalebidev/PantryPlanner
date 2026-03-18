@@ -11,8 +11,7 @@ public sealed class CreateIngredientHandlerTests
     public async Task Handle_CreatesIngredient_WhenNameIsAvailable()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
-        var handler = new CreateIngredientHandler(repository);
+        var handler = new CreateIngredientHandler(dbContext);
         var userId = Guid.NewGuid();
 
         var result = await handler.Handle(new CreateIngredientCommand
@@ -34,8 +33,7 @@ public sealed class CreateIngredientHandlerTests
     public async Task Handle_ReturnsConflict_WhenNameAlreadyExistsForUser()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
-        var handler = new CreateIngredientHandler(repository);
+        var handler = new CreateIngredientHandler(dbContext);
         var userId = Guid.NewGuid();
 
         dbContext.Ingredients.Add(Ingredient.Create(userId, "Paprika"));

@@ -7,8 +7,10 @@ This directory contains the PantryPlanner backend scaffold.
 - The backend centers on a single ASP.NET Core API project with a vertical-slice layout.
 - Local email/password auth is implemented with signup, login, and `users/me` endpoints.
 - Recipe CRUD, ingredient CRUD, meal-plan CRUD, grocery generation/checkoff, recipe-import foundation, seeded starter ingredients, and unit lookup/normalization are implemented.
+- Recipe media upload/content/delete is implemented.
 - PostgreSQL, EF Core migrations, JWT auth, ProblemDetails responses, seeded user ingredient catalogs, and test coverage are wired up.
-- Import and media upload slices are still planned.
+- Endpoint slices now keep the controller action, request, validator, handler, and request-local mapping helpers together in one `.cs` file per endpoint.
+- Persisted entities live under `src/PantryPlanner.Api/Domain/`, and EF configuration lives under `src/PantryPlanner.Api/Common/Persistence/Configurations/`.
 - `docs/` holds backend-specific implementation notes and agent-readable guidance.
 
 ## Solution Layout
@@ -21,6 +23,10 @@ backend/
     local-development.md
   src/
     PantryPlanner.Api/
+      Common/
+        Persistence/
+          Configurations/
+      Domain/
       Features/
         GroceryLists/
         Ingredients/
@@ -74,4 +80,5 @@ Run from the repo root:
 - Use `backend/docs/local-development.md` for runtime and testing details.
 - Use `backend/docs/frontend-integration-guide.md` for the entity and endpoint relationship guide that the frontend can build against now.
 - Development OpenAPI JSON is exposed at `/openapi/v1.json` and the Scalar UI at `/docs`.
-- Keep slice-local controllers, commands, validators, handlers, DTOs, entities, and EF configuration together under `backend/src/PantryPlanner.Api/Features/`.
+- Keep slice-local controller shells near their feature endpoints, using `Endpoints/` only where a slice has multiple controllers.
+- Keep each endpoint as a single `.cs` file in its feature folder with the action, request, validator, handler, and request-local mapping helpers.

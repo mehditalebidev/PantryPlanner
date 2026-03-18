@@ -15,8 +15,7 @@ public sealed class GetCurrentUserHandlerTests
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
 
-        var repository = new Repository(dbContext);
-        var handler = new GetCurrentUserHandler(repository);
+        var handler = new GetCurrentUserHandler(dbContext);
 
         var result = await handler.Handle(new GetCurrentUserQuery(user.Id), CancellationToken.None);
 
@@ -30,8 +29,7 @@ public sealed class GetCurrentUserHandlerTests
     public async Task Handle_ReturnsFailure_WhenUserDoesNotExist()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
-        var handler = new GetCurrentUserHandler(repository);
+        var handler = new GetCurrentUserHandler(dbContext);
 
         var result = await handler.Handle(new GetCurrentUserQuery(Guid.NewGuid()), CancellationToken.None);
 

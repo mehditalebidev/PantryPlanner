@@ -9,17 +9,10 @@ Implemented now:
 - local email/password signup
 - local email/password login
 - authenticated `users/me`
+- recipe CRUD, ingredient CRUD, meal-plan CRUD, grocery generation/checkoff, recipe-import foundation, unit lookup, and recipe media upload/content/delete
 - PostgreSQL persistence and EF Core migrations
 - ProblemDetails error responses
-- unit and integration tests for the auth scaffold
-
-Planned later:
-
-- recipes
-- meal plans
-- grocery lists
-- recipe imports
-- media support
+- unit and integration tests across auth and the implemented feature slices
 
 ## Environment Variables
 
@@ -63,4 +56,8 @@ Run from the repo root:
 ## Persistence Notes
 
 - migrations live in `backend/src/PantryPlanner.Api/Common/Persistence/Migrations/`
-- `backend/src/PantryPlanner.Api/Features/Users/` is the current reference slice for endpoint, handler, validator, and mapping patterns
+- EF configurations live in `backend/src/PantryPlanner.Api/Common/Persistence/Configurations/`
+- persisted entities live in `backend/src/PantryPlanner.Api/Domain/`
+- endpoint handlers and shared services inject `PantryPlannerDbContext` directly when they need EF access
+- each endpoint now lives as a single `.cs` file directly under its feature folder with the controller action, request, validator when needed, handler, and request-local mapping helpers
+- controller shell files stay beside the feature endpoints, with `Endpoints/` used only where a slice has multiple controllers
