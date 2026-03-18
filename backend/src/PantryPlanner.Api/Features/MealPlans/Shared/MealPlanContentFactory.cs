@@ -7,11 +7,11 @@ namespace PantryPlanner.Api.Features.MealPlans;
 
 public sealed class MealPlanContentFactory : IMealPlanContentFactory
 {
-    private readonly IRepository _repository;
+    private readonly PantryPlannerDbContext _dbContext;
 
-    public MealPlanContentFactory(IRepository repository)
+    public MealPlanContentFactory(PantryPlannerDbContext dbContext)
     {
-        _repository = repository;
+        _dbContext = dbContext;
     }
 
     public async Task<Result<MealPlanContentDraft>> BuildAsync(
@@ -25,7 +25,7 @@ public sealed class MealPlanContentFactory : IMealPlanContentFactory
             .Distinct()
             .ToArray();
 
-        var recipesById = await _repository.Query<Recipe>()
+        var recipesById = await _dbContext.Set<Recipe>()
             .Where(recipe => recipe.UserId == userId && recipeIds.Contains(recipe.Id))
             .ToDictionaryAsync(recipe => recipe.Id, cancellationToken);
 

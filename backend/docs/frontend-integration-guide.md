@@ -1,253 +1,936 @@
 # Frontend Integration Guide
 
-This guide explains the backend entities, endpoint relationships, and the API usage patterns the future frontend should follow.
+This guide is for frontend developers building against the PantryPlanner backend today. It explains what is implemented, how the entities relate to each other, which endpoint order to use, and which payload shapes the UI should send.
 
-## What Is Implemented Now
+Use this guide together with `docs/shared/api-contract.md` when you need the full contract reference. This file focuses on practical frontend usage.
+
+## What The Backend Supports Today
 
 - auth: signup, login, current user
 - ingredients: seeded starter catalog plus full CRUD
-- recipes: full CRUD with ordered ingredients, ordered steps, media metadata, and structured step-to-ingredient references
+- units: shared lookup for supported measurement units
+- recipes: full CRUD with reusable ingredients, ordered steps, structured step references, normalization, and media metadata
+- recipe media: upload, authenticated content delivery, and delete
 - meal plans: full CRUD with flexible slots and dated recipe scheduling
-- grocery lists: generation from meal plans plus item checkoff updates
+- grocery lists: generation from meal plans plus item checkoff
 - recipe imports: URL-based starter draft generation plus persisted review lookup
-- units: lookup endpoint plus backend-owned normalization rules used by recipes
 
-## Core Entities And Relationships
+## API Basics
+
+### Base Rules
+
+- base route prefix: `/api/v1`
+- all authenticated requests require `Authorization: Bearer <token>`
+- request and response bodies are JSON unless the endpoint explicitly uses multipart upload
+- timestamps are ISO 8601 strings
+- quantities are decimal-compatible JSON numbers
+
+### Error Shape
+
+Backend errors use ProblemDetails-style JSON.
+
+Example:
+
+```json
+{
+  "type": "https://httpstatuses.com/404",
+  "title": "Recipe was not found.",
+  "status": 404,
+  "detail": "The requested recipe does not exist.",
+  "code": "recipe_not_found"
+}
+```
+
+Validation example:
+
+```json
+{
+  "type": "https://httpstatuses.com/400",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "detail": "See the errors property for details.",
+  "code": "validation_failed",
+  "errors": {
+    "title": ["Title is required."],
+    "ingredients": ["At least one ingredient is required."]
+  }
+}
+```
+
+Frontend should always read:
+
+- `status`
+- `title`
+- `detail`
+- `code`
+- `errors` for field-level validation cases
+
+## Recommended Frontend HTTP Helpers
+
+Use one JSON helper and one multipart helper.
+
+```ts
+const API_BASE = "/api/v1";
+
+type ApiError = {
+  type?: string;
+  title: string;
+  status: number;
+  detail?: string;
+  code?: string;
+  errors?: Record<string, string[]>;
+};
+
+async function apiJson<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init.headers ?? {})
+    }
+  });
+
+  if (!response.ok) {
+    throw (await response.json()) as ApiError;
+  }
+
+  return (await response.json()) as T;
+}
+
+async function apiForm<T>(path: string, form: FormData, token: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: form
+  });
+
+  if (!response.ok) {
+    throw (await response.json()) as ApiError;
+  }
+
+  return (await response.json()) as T;
+}
+```
+
+## Suggested App Startup Flow
+
+For a signed-in app shell, this is the most useful order:
+
+1. login or restore token
+2. call `GET /users/me`
+3. call `GET /units`
+4. call `GET /ingredients`
+5. lazily load recipes, meal plans, grocery lists, or imports per route
+
+Why this order:
+
+- `users/me` confirms the token is still valid
+- `units` powers recipe forms immediately
+- `ingredients` is needed by recipe create and edit screens
+
+## Core Domain Relationships
 
 ### User
 
-- owns `Ingredient` and `Recipe`
-- receives the default starter ingredient catalog on signup
+- owns all user-scoped data
+- receives a seeded starter ingredient catalog on signup
 
 ### Ingredient
 
-- reusable, user-scoped ingredient record
-- fields: `id`, `name`, `normalizedName`, timestamps
+- reusable user-scoped ingredient record
 - can exist before any recipe uses it
-- may be referenced by many `RecipeIngredient` rows
+- may be referenced by many recipe ingredient rows
+
+Important fields:
+
+- `id`
+- `name`
+- `normalizedName`
+- `createdAt`
+- `updatedAt`
 
 ### Recipe
 
 - user-scoped aggregate root
-- fields: `id`, `title`, `description`, `servings`, `prepTimeMinutes`, `cookTimeMinutes`, `sourceUrl`, timestamps
-- owns ordered `RecipeIngredient`, `RecipeStep`, and `RecipeMediaAsset` collections
-- cannot be deleted while any `PlannedMeal` still schedules it
+- owns ingredients, steps, and media arrays
+- may be scheduled in meal plans
+
+Important fields:
+
+- `id`
+- `title`
+- `description`
+- `servings`
+- `prepTimeMinutes`
+- `cookTimeMinutes`
+- `sourceUrl`
+- `ingredients`
+- `steps`
+- `media`
 
 ### RecipeIngredient
 
-- join-like recipe line item that points to a reusable `Ingredient`
-- fields: `ingredientId`, `referenceKey`, `quantity`, `unitCode`, `normalizedQuantity`, `normalizedUnitCode`, `preparationNote`, `sortOrder`
-- `referenceKey` is the frontend-safe identifier used inside one recipe payload before database ids exist for nested children
+- one ingredient line inside one recipe
+- points to a reusable `Ingredient`
+- stores both authored measurement data and normalized measurement data when conversion is safe
+
+Important fields:
+
+- `id`
+- `ingredientId`
+- `name`
+- `referenceKey`
+- `quantity`
+- `unitCode`
+- `normalizedQuantity`
+- `normalizedUnitCode`
+- `preparationNote`
+- `sortOrder`
 
 ### RecipeStep
 
-- ordered free-text instruction row inside a recipe
-- fields: `instruction`, `sortOrder`, optional `durationMinutes`
-- exposes `ingredientReferences` so the frontend can highlight or link mentioned ingredients without parsing the text itself
+- ordered instruction row inside one recipe
+- links to ingredient rows through structured references
 
-### RecipeStepIngredientReference
+Important fields:
 
-- structured link between one `RecipeStep` and one `RecipeIngredient`
-- response fields: `recipeIngredientId`, `ingredientId`, `referenceKey`
+- `id`
+- `instruction`
+- `sortOrder`
+- `durationMinutes`
+- `ingredientReferences`
 
 ### RecipeMediaAsset
 
-- metadata-only media row for now
-- fields: `kind`, `url`, optional `storageKey`, optional `caption`, `sortOrder`
+- media metadata row attached to a recipe
+- may point to backend-managed uploaded content through `storageKey`
 
-### UnitDefinition
+Important fields:
 
-- shared reference data, not user-owned
-- fields: `code`, `displayName`, `abbreviation`, `family`, `baseUnitCode`, `conversionFactor`, `isConvertible`
-- backend validates `unitCode` values against this catalog and computes normalized quantities when conversion is safe
+- `id`
+- `kind`
+- `storageKey`
+- `url`
+- `contentType`
+- `caption`
+- `sortOrder`
 
 ### MealPlan
 
 - user-scoped planning aggregate
-- fields: `id`, `title`, `startDate`, `endDate`, timestamps
-- owns `MealSlot` and `PlannedMeal` collections
+- owns slots and entries
 
 ### MealSlot
 
-- nested meal-plan slot row
-- fields: `id`, `referenceKey`, `name`, `sortOrder`, `isDefault`
-- `referenceKey` is the stable nested write identifier used by planned meals in create and update payloads
+- one configurable slot inside a plan, such as breakfast or dinner
+- `referenceKey` is the stable nested write identifier the frontend should keep while editing
 
 ### PlannedMeal
 
-- one scheduled recipe in one slot on one date
-- fields: `plannedDate`, `mealSlotId`, `mealSlotReferenceKey`, `recipeId`, `recipeTitle`, optional `servingsOverride`, optional `note`
-- backend enforces one recipe per meal slot per day within the same meal plan
+- one recipe scheduled in one slot on one date
+- may override servings for grocery generation
 
 ### GroceryList
 
 - generated snapshot derived from one meal plan
-- fields: `id`, `mealPlanId`, `startDate`, `endDate`, `generatedAt`
-- owns `GroceryListItem` rows
+- not a live view over recipes
 
 ### GroceryListItem
 
-- aggregated ingredient line for shopping
-- fields: `id`, optional `ingredientId`, `name`, `quantity`, `unitCode`, `isChecked`, `sourceCount`
-- quantity uses normalized units when safe aggregation is possible; otherwise it stays in the authored unit code
+- aggregated shopping row
+- checkoff state is mutable after generation
 
 ### RecipeImport
 
-- user-scoped review artifact for imported recipe data
-- fields: `id`, `sourceType`, `sourceUrl`, `status`, `draft`, `warnings`, timestamps
-- `draft` uses recipe field names so the frontend can open the normal recipe form prefilled from the import result
+- review artifact, not a saved recipe
+- returns a recipe-shaped `draft` the frontend can feed into the normal recipe form
 
-## Why Normalization Stays In The Backend
+## Units And Measurement Rules
 
-- recipes persist normalized values that later planner and grocery features will aggregate on the server
-- keeping normalization in the backend prevents client drift across web, mobile, imports, or scripts
-- frontend should still use `GET /api/v1/units` to render unit choices and display unit metadata, but the backend remains the source of truth for persisted normalized values
+`GET /units` returns the supported unit catalog.
 
-## Endpoint Map
+Example:
 
-### Auth
+```json
+{
+  "code": "g",
+  "displayName": "Gram",
+  "abbreviation": "g",
+  "family": "mass",
+  "baseUnitCode": "g",
+  "conversionFactor": 1.0,
+  "isConvertible": true
+}
+```
 
-- `POST /api/v1/auth/signup`
-- `POST /api/v1/auth/login`
-- `GET /api/v1/users/me`
+Frontend rules:
 
-Use signup or login to get a bearer token, then send `Authorization: Bearer <token>` on every ingredient, recipe, and unit request.
+- never hardcode the unit list
+- use unit `code` in write payloads
+- display `displayName` or `abbreviation` in the UI
+- do not recalculate normalized quantities on the client
+- use backend-returned `normalizedQuantity` and `normalizedUnitCode` as display-only canonical values
 
-### Ingredients
+Backend rules:
 
-- `GET /api/v1/ingredients`
-- `GET /api/v1/ingredients/{id}`
-- `POST /api/v1/ingredients`
-- `PUT /api/v1/ingredients/{id}`
-- `DELETE /api/v1/ingredients/{id}`
+- normalization only happens when the selected unit can safely convert within its family
+- non-convertible units stay as authored
+- grocery generation later uses those canonical normalized values
 
-Behavior:
+## Auth Endpoints
 
-- every new user starts with a seeded ingredient catalog
-- names are deduplicated per user by `normalizedName`
-- deleting an ingredient fails with `409` if any recipe still references it
+### `POST /auth/signup`
 
-### Recipes
+Use this to create a new user and get the first token.
 
-- `GET /api/v1/recipes`
-- `GET /api/v1/recipes/{id}`
-- `POST /api/v1/recipes`
-- `PUT /api/v1/recipes/{id}`
-- `DELETE /api/v1/recipes/{id}`
+Request:
 
-Behavior:
+```json
+{
+  "email": "jane@example.com",
+  "displayName": "Jane Doe",
+  "password": "Password123!"
+}
+```
 
-- each recipe payload contains nested ingredients, steps, and media arrays
-- a nested recipe ingredient may either reference an existing `ingredientId` or create/reuse an ingredient via `name`
-- `ingredientReferenceKeys` on each step must point to ingredient `referenceKey` values from the same request
-- the response returns authored quantity/unit plus normalized quantity/unit when conversion is safe
-- deleting a recipe fails with `409` while a meal plan still references it
+Response:
 
-### Meal Plans
+```json
+{
+  "accessToken": "jwt",
+  "expiresAt": "2026-03-15T12:00:00Z",
+  "user": {
+    "id": "uuid",
+    "email": "jane@example.com",
+    "displayName": "Jane Doe"
+  }
+}
+```
 
-- `GET /api/v1/meal-plans`
-- `GET /api/v1/meal-plans/{id}`
-- `POST /api/v1/meal-plans`
-- `PUT /api/v1/meal-plans/{id}`
-- `DELETE /api/v1/meal-plans/{id}`
+Important behavior:
 
-Behavior:
+- signup also seeds the starter ingredient catalog for the user
 
-- each write submits the full meal plan document with nested `slots` and `entries`
-- entries refer to slots through `mealSlotReferenceKey` during writes
-- slot `referenceKey`, slot `name`, and slot `sortOrder` must each be unique within one meal plan payload
-- planned dates must stay inside the meal plan range
-- a slot can only contain one recipe per day
+### `POST /auth/login`
 
-### Grocery Lists
+Use this to sign an existing user in.
 
-- `POST /api/v1/grocery-lists/generate`
-- `GET /api/v1/grocery-lists/{id}`
-- `PUT /api/v1/grocery-lists/{id}/items/{itemId}`
+Request:
 
-Behavior:
+```json
+{
+  "email": "jane@example.com",
+  "password": "Password123!"
+}
+```
 
-- grocery generation starts from an existing meal plan id
-- servings overrides rescale ingredient quantities before aggregation
-- normalized ingredients aggregate by `ingredientId` plus normalized unit code
-- non-normalized ingredients only aggregate when `ingredientId` and authored `unitCode` still match exactly
-- grocery lists are stored snapshots and item checkoff state is mutable after generation
+### `GET /users/me`
 
-### Recipe Imports
+Use this to hydrate the current session from a stored token.
 
-- `POST /api/v1/recipe-imports`
-- `GET /api/v1/recipe-imports/{id}`
+## Ingredient Endpoints
 
-Behavior:
+Routes:
 
-- create an import by providing a source URL
-- the backend stores a reviewable import result instead of creating a recipe immediately
-- the returned `draft` should be treated as recipe-form starter data and submitted later through `POST /api/v1/recipes`
-- current foundation behavior infers only starter values from the URL and returns warnings that the user should review the draft
+- `GET /ingredients`
+- `GET /ingredients/{id}`
+- `POST /ingredients`
+- `PUT /ingredients/{id}`
+- `DELETE /ingredients/{id}`
 
-### Units
+### `GET /ingredients`
 
-- `GET /api/v1/units`
+Use this for ingredient pickers, search, autocomplete, and library screens.
 
-Use this to build unit pickers and display unit metadata. Do not hardcode the supported unit list in the frontend.
+Example response:
 
-## Recommended Frontend Data Flow
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Salt",
+    "normalizedName": "salt",
+    "createdAt": "2026-03-15T10:00:00Z",
+    "updatedAt": "2026-03-15T10:00:00Z"
+  },
+  {
+    "id": "uuid",
+    "name": "Olive oil",
+    "normalizedName": "olive oil",
+    "createdAt": "2026-03-15T10:00:00Z",
+    "updatedAt": "2026-03-15T10:00:00Z"
+  }
+]
+```
 
-### Ingredient Library Screens
+### `POST /ingredients`
 
-- load `GET /ingredients` for browse and search
-- use `POST /ingredients` for custom additions beyond the seeded catalog
-- use `PUT /ingredients/{id}` for rename flows
-- disable destructive delete UI or show a strong warning when delete returns `ingredient_in_use_by_recipe`
+Use this when the user wants a custom ingredient outside the seeded starter set.
 
-### Recipe Create And Edit Screens
+Request:
 
-- load `GET /ingredients` and `GET /units` before opening the form
-- let the user either pick an existing ingredient or type a new one
-- assign a stable client-side `referenceKey` for each recipe ingredient row
-- when a step mentions ingredients, store those links as `ingredientReferenceKeys`
-- submit the full recipe document on create and update
-- trust the backend response as the canonical saved recipe because normalization and ingredient auto-reuse happen server-side
+```json
+{
+  "name": "Black garlic"
+}
+```
 
-### Meal Plan Screens
+### `PUT /ingredients/{id}`
 
-- load `GET /recipes` before plan editing so the user can pick recipes
-- submit the full plan shape with nested slots and entries on both create and update
-- keep slot `referenceKey` stable on the client while editing one meal plan form
-- use the returned `mealSlotId` values for display only; keep `mealSlotReferenceKey` as the nested write key
+Use this for rename flows.
 
-### Grocery Screens
+Request:
 
-- call `POST /grocery-lists/generate` after the user picks or confirms a meal plan
-- render `quantity` plus `unitCode` exactly as returned
-- treat the generated grocery list as a snapshot and update item state through `PUT /grocery-lists/{id}/items/{itemId}`
-- do not recalculate grocery aggregation in the client
+```json
+{
+  "name": "Roasted garlic"
+}
+```
 
-### Recipe Import Screens
+### `DELETE /ingredients/{id}`
 
-- submit a source URL through `POST /recipe-imports`
-- route the returned `draft` directly into the normal recipe create/edit form state
-- surface `warnings` clearly because the current foundation intentionally returns partial drafts that require user review
-- use `GET /recipe-imports/{id}` to reopen a saved review flow
+Use this only when the ingredient is not referenced by recipes.
 
-### Recipe Detail Screens
+Frontend behavior:
 
-- render ordered `ingredients`, `steps`, and `media`
-- use `ingredientReferences` from each step if the UI wants chips, highlighting, or deep links back to the ingredient list
+- show a clear confirmation before delete
+- handle `409 ingredient_in_use_by_recipe` with a friendly message like "Remove this ingredient from recipes first"
 
-## Common Error Cases The Frontend Should Handle
+## Recipe Endpoints
+
+Routes:
+
+- `GET /recipes`
+- `GET /recipes/{id}`
+- `POST /recipes`
+- `PUT /recipes/{id}`
+- `DELETE /recipes/{id}`
+
+### How Recipe Writes Work
+
+Recipe create and update requests are full document writes.
+
+That means the frontend should send:
+
+- all ingredient rows
+- all step rows
+- all media rows that should remain attached to the recipe
+
+If an existing uploaded media item is omitted from a recipe update payload, the backend treats it as removed and cleans up the stored file.
+
+### Create Recipe Example
+
+```json
+{
+  "title": "Sheet Pan Chicken",
+  "description": "Weeknight dinner",
+  "servings": 4,
+  "prepTimeMinutes": 15,
+  "cookTimeMinutes": 30,
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+  "ingredients": [
+    {
+      "ingredientId": null,
+      "name": "Chicken thighs",
+      "referenceKey": "chicken",
+      "quantity": 2.0,
+      "unitCode": "lb",
+      "preparationNote": null,
+      "sortOrder": 1
+    },
+    {
+      "ingredientId": null,
+      "name": "Salt",
+      "referenceKey": "salt",
+      "quantity": 1.0,
+      "unitCode": "tsp",
+      "preparationNote": null,
+      "sortOrder": 2
+    }
+  ],
+  "steps": [
+    {
+      "instruction": "Season the chicken with salt.",
+      "sortOrder": 1,
+      "durationMinutes": 5,
+      "ingredientReferenceKeys": ["chicken", "salt"]
+    },
+    {
+      "instruction": "Roast until cooked through.",
+      "sortOrder": 2,
+      "durationMinutes": 30,
+      "ingredientReferenceKeys": ["chicken"]
+    }
+  ],
+  "media": []
+}
+```
+
+Important notes:
+
+- `referenceKey` only needs to be stable inside the current recipe payload
+- use `ingredientId` when the user picked an existing ingredient
+- use `name` when the user typed a new ingredient and wants the backend to create or reuse it
+- `media` is often empty on create because uploads require an existing recipe id
+- if you want to attach externally hosted media without uploading it through PantryPlanner, omit `storageKey`, use an absolute `url`, and leave `contentType` optional
+
+### Create Recipe Response Example
+
+```json
+{
+  "id": "recipe-uuid",
+  "title": "Sheet Pan Chicken",
+  "description": "Weeknight dinner",
+  "servings": 4,
+  "prepTimeMinutes": 15,
+  "cookTimeMinutes": 30,
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+  "ingredients": [
+    {
+      "id": "recipe-ingredient-uuid",
+      "ingredientId": "ingredient-uuid",
+      "name": "Chicken thighs",
+      "referenceKey": "chicken",
+      "quantity": 2.0,
+      "unitCode": "lb",
+      "normalizedQuantity": 907.18474,
+      "normalizedUnitCode": "g",
+      "preparationNote": null,
+      "sortOrder": 1
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-uuid",
+      "instruction": "Season the chicken with salt.",
+      "sortOrder": 1,
+      "durationMinutes": 5,
+      "ingredientReferences": [
+        {
+          "recipeIngredientId": "recipe-ingredient-uuid",
+          "ingredientId": "ingredient-uuid",
+          "referenceKey": "chicken"
+        }
+      ]
+    }
+  ],
+  "media": [],
+  "createdAt": "2026-03-15T12:00:00Z",
+  "updatedAt": "2026-03-15T12:00:00Z"
+}
+```
+
+### Update Recipe Example
+
+Use `PUT /recipes/{id}` with the full desired final shape.
+
+This is especially important for `media`.
+
+Example update after one uploaded image already exists:
+
+```json
+{
+  "title": "Sheet Pan Chicken",
+  "description": "Weeknight dinner with lemon",
+  "servings": 4,
+  "prepTimeMinutes": 20,
+  "cookTimeMinutes": 30,
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+  "ingredients": [
+    {
+      "ingredientId": "ingredient-uuid",
+      "name": null,
+      "referenceKey": "chicken",
+      "quantity": 2.0,
+      "unitCode": "lb",
+      "preparationNote": null,
+      "sortOrder": 1
+    }
+  ],
+  "steps": [
+    {
+      "instruction": "Roast the chicken.",
+      "sortOrder": 1,
+      "durationMinutes": 30,
+      "ingredientReferenceKeys": ["chicken"]
+    }
+  ],
+  "media": [
+    {
+      "kind": "image",
+      "storageKey": "recipes/user-id/recipe-id/file.jpg",
+      "url": "/api/v1/media/recipes/user-id/recipe-id/file.jpg",
+      "contentType": "image/jpeg",
+      "caption": "Updated caption",
+      "sortOrder": 1
+    }
+  ]
+}
+```
+
+Important notes:
+
+- when `storageKey` is present, `url` must be the rooted relative backend media URL
+- when `storageKey` is present, `contentType` is required
+- when `storageKey` is omitted, `url` must be an absolute URL
+- if you omit a previously uploaded media row from this array, that media file is deleted
+
+### Delete Recipe
+
+Handle these cases:
+
+- `409 recipe_in_use_by_meal_plan` if the recipe is still scheduled
+- uploaded files are also deleted when recipe deletion succeeds
+
+## Recipe Media Endpoints
+
+Routes:
+
+- `POST /recipes/{recipeId}/media`
+- `GET /media/{**storageKey}`
+- `DELETE /recipes/{recipeId}/media/{mediaId}`
+
+### Recommended Media Flow
+
+Use this sequence:
+
+1. create or load the recipe
+2. upload media through `POST /recipes/{recipeId}/media`
+3. use the returned media object to update local recipe form state
+4. when saving the recipe later, include all media rows you want to keep in the recipe `PUT` payload
+
+### Upload Media Example
+
+```ts
+async function uploadRecipeImage(recipeId: string, file: File, token: string) {
+  const form = new FormData();
+  form.append("kind", "image");
+  form.append("caption", "Finished dish");
+  form.append("sortOrder", "1");
+  form.append("file", file);
+
+  return apiForm<RecipeMediaAssetResponse>(`/recipes/${recipeId}/media`, form, token);
+}
+```
+
+Example response:
+
+```json
+{
+  "id": "media-uuid",
+  "kind": "image",
+  "storageKey": "recipes/user-id/recipe-id/uuid.jpg",
+  "url": "/api/v1/media/recipes/user-id/recipe-id/uuid.jpg",
+  "contentType": "image/jpeg",
+  "caption": "Finished dish",
+  "sortOrder": 1
+}
+```
+
+### Render Uploaded Media
+
+Because `GET /media/{**storageKey}` is authenticated, normal public-image assumptions do not apply.
+
+The safest frontend approach is to fetch the file with auth and create an object URL.
+
+```ts
+async function loadProtectedMedia(url: string, token: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load media");
+  }
+
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+```
+
+### Delete Uploaded Media
+
+Use `DELETE /recipes/{recipeId}/media/{mediaId}` when the UI explicitly removes one media item.
+
+If you instead remove the media row from the recipe `PUT` payload, the backend also cleans it up.
+
+## Meal Plan Endpoints
+
+Routes:
+
+- `GET /meal-plans`
+- `GET /meal-plans/{id}`
+- `POST /meal-plans`
+- `PUT /meal-plans/{id}`
+- `DELETE /meal-plans/{id}`
+
+### How Meal Plan Writes Work
+
+Meal-plan writes are also full document writes.
+
+The frontend should send:
+
+- all slots
+- all entries
+
+Entries do not refer to slot ids during writes. They refer to `mealSlotReferenceKey`.
+
+### Create Meal Plan Example
+
+```json
+{
+  "title": "Week 1",
+  "startDate": "2026-03-16",
+  "endDate": "2026-03-22",
+  "slots": [
+    {
+      "referenceKey": "breakfast",
+      "name": "Breakfast",
+      "sortOrder": 1,
+      "isDefault": true
+    },
+    {
+      "referenceKey": "dinner",
+      "name": "Dinner",
+      "sortOrder": 2,
+      "isDefault": true
+    }
+  ],
+  "entries": [
+    {
+      "plannedDate": "2026-03-16",
+      "mealSlotReferenceKey": "dinner",
+      "recipeId": "recipe-uuid",
+      "servingsOverride": 2,
+      "note": "Use leftovers for lunch"
+    }
+  ]
+}
+```
+
+Frontend rules:
+
+- keep slot `referenceKey` stable while editing
+- do not use returned slot ids as write keys
+- prevent duplicate slot names, duplicate sort orders, and duplicate slot/date entries in the form if possible before submit
+
+## Grocery Endpoints
+
+Routes:
+
+- `POST /grocery-lists/generate`
+- `GET /grocery-lists/{id}`
+- `PUT /grocery-lists/{id}/items/{itemId}`
+
+### Generate Grocery List Example
+
+Request:
+
+```json
+{
+  "mealPlanId": "meal-plan-uuid"
+}
+```
+
+Response:
+
+```json
+{
+  "id": "grocery-list-uuid",
+  "mealPlanId": "meal-plan-uuid",
+  "startDate": "2026-03-16",
+  "endDate": "2026-03-22",
+  "generatedAt": "2026-03-15T12:00:00Z",
+  "items": [
+    {
+      "id": "item-uuid",
+      "ingredientId": "ingredient-uuid",
+      "name": "Chicken thighs",
+      "quantity": 907.18474,
+      "unitCode": "g",
+      "isChecked": false,
+      "sourceCount": 2
+    }
+  ]
+}
+```
+
+Frontend rules:
+
+- treat grocery lists as snapshots, not live computed state
+- never recompute aggregation in the UI
+- render `quantity` and `unitCode` exactly as returned
+
+### Checkoff Update Example
+
+```json
+{
+  "isChecked": true
+}
+```
+
+## Recipe Import Endpoints
+
+Routes:
+
+- `POST /recipe-imports`
+- `GET /recipe-imports/{id}`
+
+### Import Flow
+
+The current import feature is intentionally a foundation, not a full parser.
+
+It works like this:
+
+1. submit a recipe URL
+2. backend creates a review artifact
+3. backend returns a recipe-shaped `draft`
+4. frontend opens the normal recipe editor prefilled with that draft
+5. user reviews and completes the recipe
+6. frontend saves through the normal `POST /recipes` endpoint
+
+### Create Import Example
+
+Request:
+
+```json
+{
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken"
+}
+```
+
+Response:
+
+```json
+{
+  "id": "import-uuid",
+  "sourceType": "url",
+  "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+  "status": "needs_review",
+  "draft": {
+    "title": "Sheet Pan Chicken",
+    "description": null,
+    "servings": null,
+    "prepTimeMinutes": null,
+    "cookTimeMinutes": null,
+    "sourceUrl": "https://example.com/recipes/sheet-pan-chicken",
+    "ingredients": [],
+    "steps": [],
+    "media": []
+  },
+  "warnings": [
+    "This import foundation only infers a starter draft from the source URL. Review and complete the recipe before saving it."
+  ],
+  "createdAt": "2026-03-15T12:00:00Z",
+  "updatedAt": "2026-03-15T12:00:00Z"
+}
+```
+
+Frontend rules:
+
+- show the warnings prominently
+- do not treat the import as a saved recipe
+- map `draft` directly into recipe form state
+- use `GET /recipe-imports/{id}` if the user resumes the review flow later
+
+## Typical Screen-by-Screen Data Flow
+
+### Auth Shell
+
+1. login or signup
+2. store token securely
+3. call `GET /users/me`
+4. prefetch `GET /units` and `GET /ingredients`
+
+### Ingredient Library Screen
+
+1. call `GET /ingredients`
+2. optionally filter on the client for now
+3. create custom ingredients with `POST /ingredients`
+4. rename with `PUT /ingredients/{id}`
+5. delete with `DELETE /ingredients/{id}` and handle `409`
+
+### Recipe Create Screen
+
+1. load `GET /ingredients`
+2. load `GET /units`
+3. build local ingredient rows with client-generated `referenceKey` values
+4. build local step rows with `ingredientReferenceKeys`
+5. submit `POST /recipes`
+6. after create succeeds, allow media uploads against the returned recipe id
+
+### Recipe Edit Screen
+
+1. load `GET /recipes/{id}`
+2. populate form with returned ordered arrays
+3. upload media separately as needed
+4. when saving, send the full desired recipe document through `PUT /recipes/{id}`
+5. include every media row that should remain attached
+
+### Meal Plan Screen
+
+1. load `GET /recipes`
+2. load `GET /meal-plans/{id}` or start from an empty form
+3. keep slot `referenceKey` values stable locally
+4. save through `POST` or `PUT`
+
+### Grocery Screen
+
+1. generate with `POST /grocery-lists/generate`
+2. render returned snapshot
+3. toggle item state with `PUT /grocery-lists/{id}/items/{itemId}`
+
+### Recipe Import Screen
+
+1. submit URL through `POST /recipe-imports`
+2. open returned `draft` in the recipe editor
+3. save final reviewed content through recipe create
+
+## Common Frontend Mistakes To Avoid
+
+- do not hardcode unit options
+- do not compute normalized values in the client
+- do not treat recipe and meal-plan `PUT` requests as partial patches
+- do not omit existing media rows from a recipe update unless you want them deleted
+- do not assume media URLs are public; they are authenticated backend routes
+- do not use slot ids as write keys for meal-plan entries; use `mealSlotReferenceKey`
+- do not treat recipe imports as recipes; they are review artifacts only
+
+## Common Error Cases To Handle Well
 
 - `401 unauthorized`: token missing or expired
-- `404 ingredient_not_found` or `404 recipe_not_found`: stale route or deleted resource
-- `404 meal_plan_not_found` or `404 grocery_list_not_found`: stale route or cross-user access
-- `404 recipe_import_not_found`: stale route or cross-user access
-- `409 ingredient_name_in_use`: duplicate ingredient rename/create
-- `409 ingredient_in_use_by_recipe`: attempted delete while referenced by at least one recipe
-- `409 recipe_in_use_by_meal_plan`: attempted recipe delete while still scheduled
-- `400 validation_failed`: invalid payload, unsupported unit code, duplicate `referenceKey`, missing step reference target, or invalid sort order
+- `404 ingredient_not_found`: stale ingredient route or cross-user access
+- `404 recipe_not_found`: stale recipe route or cross-user access
+- `404 meal_plan_not_found`: stale meal-plan route or cross-user access
+- `404 grocery_list_not_found`: stale grocery-list route or cross-user access
+- `404 recipe_import_not_found`: stale import route or cross-user access
+- `404 recipe_media_not_found` or `404 media_content_not_found`: removed media or cross-user access
+- `409 ingredient_name_in_use`: duplicate ingredient create or rename
+- `409 ingredient_in_use_by_recipe`: delete blocked by recipe usage
+- `409 recipe_in_use_by_meal_plan`: delete blocked by schedule usage
+- `400 validation_failed`: invalid field values, duplicate `referenceKey`, bad unit code, invalid media payload, or other request-shape issues
 
-## Current Seeded Ingredient Catalog
+## Seeded Ingredient Catalog
 
-- the backend seeds a broad starter catalog of common pantry staples, produce, proteins, dairy, herbs, spices, sauces, grains, and baking ingredients
-- examples include `Salt`, `Olive oil`, `Garlic`, `Chicken thighs`, `Rice`, `Paprika`, `Soy sauce`, and `Tomatoes`
-- users can still create their own custom ingredients beyond the starter set
+Every new user receives a large starter ingredient catalog.
+
+Examples include:
+
+- `Salt`
+- `Olive oil`
+- `Garlic`
+- `Chicken thighs`
+- `Rice`
+- `Paprika`
+- `Soy sauce`
+- `Tomatoes`
+
+Frontend implication:
+
+- autocomplete and ingredient pickers are useful immediately after signup
+- custom ingredient creation should still remain available

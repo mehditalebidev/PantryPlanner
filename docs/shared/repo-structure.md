@@ -76,8 +76,10 @@ backend/
         Api/
         Behaviors/
         Persistence/
+          Configurations/
         Results/
         Security/
+      Domain/
       Features/
         Users/
       Program.cs
@@ -97,8 +99,9 @@ backend/
 
 ## Backend Responsibility Split
 
-- `PantryPlanner.Api/Common`: shared API helpers, persistence, validation behavior, security, and result models
-- `PantryPlanner.Api/Features/*`: slice-local endpoints, handlers, validators, DTOs, entities, and EF configuration
+- `PantryPlanner.Api/Common`: shared API helpers, persistence, EF configuration, validation behavior, security, and result models
+- `PantryPlanner.Api/Domain`: persisted entities and aggregate types
+- `PantryPlanner.Api/Features/*`: slice-local controller shells, one-file endpoint modules, shared DTOs, and feature helpers
 - `tests/PantryPlanner.Api.UnitTests`: fast unit coverage for shared helpers and slice logic
 - `tests/PantryPlanner.Api.IntegrationTests`: end-to-end API tests plus shared test support and seeding helpers
 

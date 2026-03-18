@@ -95,7 +95,7 @@ Returns the authenticated user.
 }
 ```
 
-## Planned Recipes Contract
+## Implemented Recipes Contract
 
 Recipe creation and updates should support ingredient reuse, structured step references, and measurement normalization.
 
@@ -154,18 +154,15 @@ Recipe creation and updates should support ingredient reuse, structured step ref
       "ingredientReferenceKeys": ["chicken-thighs"]
     }
   ],
-  "media": [
-    {
-      "kind": "image",
-      "storageKey": "recipes/sheet-pan.jpg",
-      "url": "/api/v1/media/recipes/user-id/recipe-id/sheet-pan.jpg",
-      "contentType": "image/jpeg",
-      "caption": "Finished dish",
-      "sortOrder": 1
-    }
-  ]
+  "media": []
 }
 ```
+
+Notes:
+
+- create requests commonly use `media: []` because uploaded media requires an existing recipe id
+- recipe writes may still include externally hosted media rows when `storageKey` is omitted and `url` is an absolute URL
+- backend-managed uploaded media rows are valid in recipe writes only after upload, using `storageKey`, a rooted relative backend `url`, and `contentType`
 
 ### Recipe Shape
 
@@ -212,7 +209,7 @@ Recipe creation and updates should support ingredient reuse, structured step ref
       "id": "uuid",
       "kind": "image",
       "storageKey": "recipes/user-id/recipe-id/sheet-pan.jpg",
-      "url": "https://cdn.example.com/recipes/sheet-pan.jpg",
+      "url": "/api/v1/media/recipes/user-id/recipe-id/sheet-pan.jpg",
       "contentType": "image/jpeg",
       "caption": "Finished dish",
       "sortOrder": 1
@@ -246,7 +243,9 @@ Implemented behavior:
 - normalized quantities are returned when the selected unit can be converted safely into that family base unit
 - custom or non-convertible units are preserved as authored without guessed normalization
 - ingredient deletion returns `409` when the ingredient is still referenced by at least one recipe
-- uploaded media URLs may be backend-managed relative paths, while manually linked remote media may still use absolute URLs
+- recipe create and update are full-document writes for ingredients, steps, and media
+- uploaded media URLs are backend-managed rooted relative paths when `storageKey` is present
+- manually linked remote media may still use absolute URLs when `storageKey` is omitted
 
 ## Implemented Recipe Media Contract
 

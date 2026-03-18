@@ -8,16 +8,16 @@ namespace PantryPlanner.Api.Features.GroceryLists;
 
 public sealed class GroceryListGenerator : IGroceryListGenerator
 {
-    private readonly IRepository _repository;
+    private readonly PantryPlannerDbContext _dbContext;
 
-    public GroceryListGenerator(IRepository repository)
+    public GroceryListGenerator(PantryPlannerDbContext dbContext)
     {
-        _repository = repository;
+        _dbContext = dbContext;
     }
 
     public async Task<Result<GroceryList>> GenerateAsync(Guid userId, Guid mealPlanId, CancellationToken cancellationToken)
     {
-        var mealPlan = await _repository.Query<MealPlan>()
+        var mealPlan = await _dbContext.Set<MealPlan>()
             .Where(plan => plan.UserId == userId && plan.Id == mealPlanId)
             .Include(plan => plan.Entries)
                 .ThenInclude(entry => entry.Recipe)

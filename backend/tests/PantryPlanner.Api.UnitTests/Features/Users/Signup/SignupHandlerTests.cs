@@ -12,11 +12,10 @@ public sealed class SignupHandlerTests
     public async Task Handle_CreatesUserAndReturnsAuthResponse_WhenEmailIsAvailable()
     {
         await using var dbContext = InMemoryDbContextFactory.Create();
-        var repository = new Repository(dbContext);
         var ingredientCatalogSeeder = new IngredientCatalogSeeder(dbContext);
         var passwordService = new FakePasswordService();
         var tokenService = new FakeTokenService();
-        var handler = new SignupHandler(repository, ingredientCatalogSeeder, passwordService, tokenService);
+        var handler = new SignupHandler(dbContext, ingredientCatalogSeeder, passwordService, tokenService);
 
         var result = await handler.Handle(new SignupCommand
         {
@@ -47,9 +46,8 @@ public sealed class SignupHandlerTests
         dbContext.Users.Add(existingUser);
         await dbContext.SaveChangesAsync();
 
-        var repository = new Repository(dbContext);
         var ingredientCatalogSeeder = new IngredientCatalogSeeder(dbContext);
-        var handler = new SignupHandler(repository, ingredientCatalogSeeder, new FakePasswordService(), new FakeTokenService());
+        var handler = new SignupHandler(dbContext, ingredientCatalogSeeder, new FakePasswordService(), new FakeTokenService());
 
         var result = await handler.Handle(new SignupCommand
         {

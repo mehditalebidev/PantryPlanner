@@ -5,17 +5,17 @@ using Microsoft.AspNetCore.Mvc;
 using PantryPlanner.Api.Common.Api;
 using PantryPlanner.Api.Common.Security;
 
-namespace PantryPlanner.Api.Features.Users;
+namespace PantryPlanner.Api.Features.GroceryLists;
 
 [ApiController]
 [Authorize]
 [ApiVersion(1.0)]
-[Route("api/v{version:apiVersion}/users")]
-public sealed partial class UsersController : ControllerBase
+[Route("api/v{version:apiVersion}/grocery-lists")]
+public sealed partial class GroceryListsController : ControllerBase
 {
     private readonly ISender _sender;
 
-    public UsersController(ISender sender)
+    public GroceryListsController(ISender sender)
     {
         _sender = sender;
     }

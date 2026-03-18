@@ -9,11 +9,11 @@ namespace PantryPlanner.Api.Features.Recipes;
 public sealed class RecipeContentFactory : IRecipeContentFactory
 {
     private readonly IMeasurementNormalizer _measurementNormalizer;
-    private readonly IRepository _repository;
+    private readonly PantryPlannerDbContext _dbContext;
 
-    public RecipeContentFactory(IRepository repository, IMeasurementNormalizer measurementNormalizer)
+    public RecipeContentFactory(PantryPlannerDbContext dbContext, IMeasurementNormalizer measurementNormalizer)
     {
-        _repository = repository;
+        _dbContext = dbContext;
         _measurementNormalizer = measurementNormalizer;
     }
 
@@ -58,7 +58,7 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
                 {
                     ingredient = Ingredient.Create(userId, ingredientRequest.Name!);
                     existingIngredientsByName[normalizedName] = ingredient;
-                    await _repository.AddAsync(ingredient, cancellationToken);
+                    await _dbContext.AddAsync(ingredient, cancellationToken);
                 }
             }
 
@@ -146,7 +146,7 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
             return null;
         }
 
-        var mediaByStorageKey = await _repository.Query<RecipeMediaAsset>()
+        var mediaByStorageKey = await _dbContext.Set<RecipeMediaAsset>()
             .Where(mediaAsset =>
                 mediaAsset.RecipeId == recipeId.Value &&
                 mediaAsset.Recipe.UserId == userId &&
@@ -170,7 +170,7 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
 
         var ingredientsById = ingredientIds.Length == 0
             ? []
-            : await _repository.Query<Ingredient>()
+            : await _dbContext.Set<Ingredient>()
                 .Where(ingredient => ingredient.UserId == userId && ingredientIds.Contains(ingredient.Id))
                 .ToDictionaryAsync(ingredient => ingredient.Id, cancellationToken);
 
@@ -193,7 +193,7 @@ public sealed class RecipeContentFactory : IRecipeContentFactory
             return new Dictionary<string, Ingredient>(StringComparer.Ordinal);
         }
 
-        return await _repository.Query<Ingredient>()
+        return await _dbContext.Set<Ingredient>()
             .Where(ingredient => ingredient.UserId == userId && normalizedNames.Contains(ingredient.NormalizedName))
             .ToDictionaryAsync(ingredient => ingredient.NormalizedName, cancellationToken);
     }
